@@ -5,7 +5,7 @@ import os.path
 from sklearn.metrics import precision_score, recall_score, f1_score, classification_report, confusion_matrix
 import numpy as np
 import logging
-from loader.task import DontPatronizeMe
+from spec.task import DontPatronizeMe
 from datetime import datetime
 
 
