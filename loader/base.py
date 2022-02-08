@@ -5,15 +5,19 @@ import os.path
 from sklearn.metrics import precision_score, recall_score, f1_score, classification_report, confusion_matrix
 import numpy as np
 import logging
+import pandas as pd
 from spec.task import DontPatronizeMe
 from datetime import datetime
 
 
-class Official:
+class BaseLoader:
     base_dir = "runtime"
     data_dir = "data"
+    name = "Base"
     score_filename = "score.txt"
     final_filename = "task1.txt"
+    train_split_filename = "train_semeval_parids-labels.csv"
+    dev_split_filename = "dev_semeval_parids-labels.csv"
     all_data_filename = "dontpatronizeme_pcl.tsv"
     test_data_filename = "dontpatronizeme_test.tsv"
 
@@ -22,11 +26,11 @@ class Official:
     test_data = []
     all_data = []
 
-    def __init__(self, test=False):
+    def __init__(self):
         # Initialize directory
         if not os.path.exists(self.base_dir):
             os.mkdir(self.base_dir)
-        date_token = "Dev " if test else "Test "
+        date_token = self.name + " "
         date_token += datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.storage_folder = os.path.join(self.base_dir, date_token)
         logging.info(f"Initialized score directory in {self.storage_folder}")
@@ -35,7 +39,7 @@ class Official:
         if not os.path.exists(self.storage_folder):
             os.mkdir(self.storage_folder)
         else:
-            raise RuntimeError(f"Directory {self.storage_folder} already exists!")
+            logging.warning(f"Directory {self.storage_folder} already exists!")
         if not os.path.exists(self.ref_dir):
             os.mkdir(self.ref_dir)
         if not os.path.exists(self.res_dir):
@@ -81,45 +85,3 @@ class Official:
         logging.info(f"F1 score")
         logging.info(task_f1)
         logging.info(f"Score file written to {file_path}")
-
-    def fold(self, k):
-        """
-        Generate k-fold cross validation dataset
-        :param k: number of folds
-        :return: train_data, test_data
-        """
-        fold_size = int(len(self.all_data) / k)
-        self.all_data = np.random.permutation(self.all_data)
-        self.test_data, self.train_data = np.split(self.all_data.copy(), [fold_size], axis=0)
-        for i in range(k):
-            yield self.train_data, self.test_data
-            if i + 1 != k:
-                self.train_data[i * fold_size:(i + 1) * fold_size], self.test_data = \
-                    self.test_data, self.train_data[i * fold_size:(i + 1) * fold_size].copy()
-
-    def nested_fold(self, k):
-        """
-        Generate nested k-fold cross validation
-        :param k: number of folds
-        :return: train_data, validation_data, test_data
-        """
-        fold_size = int(len(self.all_data) / k)
-        self.all_data = np.random.permutation(self.all_data)
-
-        # do a copy and split before the inner loop begins
-        self.test_data, self.train_data = np.split(self.all_data.copy(), [fold_size], axis=0)
-
-        # outer loop
-        for j in range(k):
-            inner_fold_size = int(len(self.train_data) / k)
-            self.valid_data, self.inner_train_data = np.split(self.train_data.copy(), [inner_fold_size], axis=0)
-
-            # inner loop
-            for i in range(k - 1):
-                yield self.inner_train_data, self.valid_data, self.test_data, j, i
-                if i + 1 != k - 1:
-                    self.inner_train_data[i * inner_fold_size:(i + 1) * inner_fold_size], self.valid_data = \
-                        self.valid_data, self.inner_train_data[i * inner_fold_size:(i + 1) * inner_fold_size].copy()
-            if j + 1 != k:
-                self.train_data[j * fold_size:(j + 1) * fold_size], self.test_data = \
-                    self.test_data, self.train_data[j * fold_size:(j + 1) * fold_size].copy()
