@@ -14,8 +14,8 @@ from datetime import datetime
 class OfficialLoader(BaseLoader):
     name = "Split"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, token=""):
+        super().__init__(token)
 
     def split(self):
         logging.info(f"Performing split using official split files.")

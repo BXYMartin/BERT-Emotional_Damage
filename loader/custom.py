@@ -14,8 +14,8 @@ from datetime import datetime
 class CustomLoader(BaseLoader):
     name = "Fold"
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, token=""):
+        super().__init__(token)
 
     def fold(self, k):
         """

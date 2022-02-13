@@ -26,12 +26,14 @@ class BaseLoader:
     test_data = []
     all_data = []
 
-    def __init__(self):
+    def __init__(self, token=""):
         # Initialize directory
         if not os.path.exists(self.base_dir):
             os.mkdir(self.base_dir)
-        date_token = self.name + " "
-        date_token += datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        date_token = token
+        if len(token) == 0:
+            date_token = self.name + " "
+            date_token += datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.storage_folder = os.path.join(self.base_dir, date_token)
         logging.info(f"Initialized score directory in {self.storage_folder}")
         self.ref_dir = os.path.join(self.storage_folder, "ref")

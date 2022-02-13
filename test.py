@@ -1,5 +1,6 @@
 import unittest
 from loader.official import OfficialLoader
+from model.RoBERTa import RoBERTa
 from loader.custom import CustomLoader
 import logging
 import numpy as np
@@ -34,6 +35,26 @@ class LoaderTestCase(unittest.TestCase):
         self.assertEqual(len(data_loader.test_data), 2094)
         self.assertEqual(len(data_loader.train_data), 8375)
 
+
+class RoBERTaTestCase(unittest.TestCase):
+    def test_train(self):
+        data_loader = OfficialLoader("Official-RoBERTa-Test-Case")
+        model = RoBERTa(data_loader)
+        data_loader.split()
+        data_loader.balance()
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_predict(self):
+        data_loader = OfficialLoader("Official-RoBERTa-Test-Case")
+        data_loader.split()
+        #data_loader.balance()
+        model = RoBERTa(data_loader)
+        model.predict()
+        print(model.prediction)
+        data_loader.eval(data_loader.test_data.label.tolist(), model.prediction)
+        self.assertEqual(True, True)
 
 
 if __name__ == '__main__':
