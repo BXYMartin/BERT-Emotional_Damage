@@ -11,8 +11,8 @@ from loader.base import BaseLoader
 class RoBERTa:
     def __init__(self, loader: BaseLoader):
         self.data_loader = loader
-        self.model_args = ClassificationArgs(num_train_epochs=1,
-                                             best_model_dir=os.path.join(loader.storage_folder, "output"),
+        self.model_args = ClassificationArgs(num_train_epochs=5,
+                                             best_model_dir=os.path.join(loader.storage_folder, "output", "best_model"),
                                              cache_dir=os.path.join(loader.storage_folder, "output", "cache"),
                                              output_dir=os.path.join(loader.storage_folder, "output"),
                                              use_multiprocessing=True,
@@ -22,7 +22,7 @@ class RoBERTa:
                                           'roberta-base',
                                           args=self.model_args,
                                           num_labels=2,
-                                          use_cuda=False)
+                                          use_cuda=True)
 
     def train(self):
         # Train model
