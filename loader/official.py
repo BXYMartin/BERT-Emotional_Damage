@@ -15,11 +15,19 @@ from datetime import datetime
 class OfficialLoader(BaseLoader):
     name = "Split"
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
+    official_train_data_filename = "official_split_train_dataset.csv"
+    official_test_data_filename = "official_split_test_dataset.csv"
 
     def __init__(self, token=""):
         super().__init__(token)
 
     def split(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_filename)) and os.path.isfile(os.path.join(self.data_dir, self.official_test_data_filename)):
+            logging.info(f"Using cached official split files.")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_filename))
+            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_filename))
+            logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            return
         logging.info(f"Performing split using official split files.")
         train_ids = pd.read_csv(os.path.join(self.data_dir, self.train_split_filename))
         dev_ids = pd.read_csv(os.path.join(self.data_dir, self.dev_split_filename))
@@ -47,6 +55,8 @@ class OfficialLoader(BaseLoader):
                 'label': label
             })
         self.test_data = pd.DataFrame(self.test_data)
+        self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_filename))
+        self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_filename))
         logging.info(f"Successfully split TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
 
     def balance(self):
