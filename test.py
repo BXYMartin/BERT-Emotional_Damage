@@ -6,6 +6,8 @@ os.environ['HF_DATASETS_CACHE'] = "/vol/bitbucket/mb220/.cache"
 os.environ["WANDB_DISABLED"] = "true"
 from loader.official import OfficialLoader
 from model.RoBERTa import RoBERTa
+from model.BackTranslate import BackTranslate
+from model.RoBERTaBase import RoBERTaBase
 from model.BertBaseUncased import BertBaseUncased
 from loader.custom import CustomLoader
 import logging
@@ -46,9 +48,9 @@ class LoaderTestCase(unittest.TestCase):
 class RoBERTaTestCase(unittest.TestCase):
     def test_train(self):
         data_loader = OfficialLoader("Official-RoBERTa-Test-Case")
-        model = RoBERTa(data_loader)
         data_loader.split()
         data_loader.balance()
+        model = RoBERTa(data_loader)
         model.train()
         self.assertEqual(True, True)
         pass
@@ -68,7 +70,7 @@ class BERTBaseUncasedCase(unittest.TestCase):
     def test_train(self):
         data_loader = OfficialLoader("Official-BERTBaseUncased-Test-Case")
         data_loader.split()
-        # data_loader.balance()
+        data_loader.balance()
         model = BertBaseUncased(data_loader)
         model.train()
         self.assertEqual(True, True)
@@ -89,6 +91,50 @@ class BERTBaseUncasedCase(unittest.TestCase):
         data_loader.final(model.prediction)
         self.assertEqual(True, True)
 
+
+class RoBERTaBaseCase(unittest.TestCase):
+    def test_train(self):
+        data_loader = OfficialLoader("Official-RoBERTaBase-Test-Case")
+        data_loader.split()
+        data_loader.balance()
+        model = RoBERTaBase(data_loader)
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_predict(self):
+        data_loader = OfficialLoader("Official-RoBERTaBase-Test-Case")
+        data_loader.split()
+        data_loader.balance()
+        model = RoBERTaBase(data_loader, load_existing=True)
+        model.predict()
+        self.assertEqual(True, True)
+
+    def test_final(self):
+        data_loader = OfficialLoader("Official-RoBERTaBase-Test-Case")
+        model = RoBERTaBase(data_loader, load_existing=True)
+        model.final()
+        data_loader.final(model.prediction)
+        self.assertEqual(True, True)
+
+
+class BackTranslateTestCase(unittest.TestCase):
+    def test_translation(self):
+        data_loader = OfficialLoader("Official-RoBERTaBase-Test-Case")
+        data_loader.split()
+        model = BackTranslate()
+        original = data_loader.train_data.text.tolist()[:10]
+        print(original)
+        translated = model.back_translate(original)
+
+        print(translated)
+
+    def test_augmentation(self):
+        data_loader = OfficialLoader("Official-RoBERTaBase-Test-Case")
+        data_loader.split()
+        data_loader.augmentation()
+        print(data_loader.train_data)
+        print(data_loader.train_data.head())
 
 
 if __name__ == '__main__':

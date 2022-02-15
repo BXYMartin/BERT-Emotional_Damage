@@ -6,6 +6,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, classificat
 import numpy as np
 import logging
 import pandas as pd
+from model.BackTranslate import BackTranslate
 from loader.base import BaseLoader
 from spec.task import DontPatronizeMe
 from datetime import datetime
@@ -13,6 +14,7 @@ from datetime import datetime
 
 class OfficialLoader(BaseLoader):
     name = "Split"
+    augmentation_data_filename = "back_translation_balanced_dataset.csv"
 
     def __init__(self, token=""):
         super().__init__(token)
@@ -56,3 +58,41 @@ class OfficialLoader(BaseLoader):
         positive_class = positive_class[:minimum_label]
         negative_class = negative_class[:minimum_label]
         self.train_data = pd.concat([positive_class, negative_class])
+        self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
+
+    def augmentation(self):
+        positive_class = self.train_data[self.train_data.label == 1]
+        negative_class = self.train_data[self.train_data.label == 0]
+        positive_label = len(positive_class)
+        negative_label = len(negative_class)
+        minimum_label = min(positive_label, negative_label)
+        maximum_label = max(positive_label, negative_label)
+        target_class = positive_class
+        other_class = negative_class
+        target_label = 1
+        if minimum_label == negative_label:
+            target_class = negative_class
+            other_class = positive_class
+            target_label = 0
+        sources = target_class["text"].to_list()
+        print(sources[:5])
+        target_langs = ["fr", "es", "it", "pt", "ro", "ca", "gl", "la"]
+        model = BackTranslate()
+        for round in range(int(maximum_label / minimum_label) + 1):
+            target_lang = target_langs[round % len(target_langs)]
+            logging.info(f"Data augumentation round {round}, intermediate language {target_lang}")
+            translated = model.back_translate(sources, target_lang=target_lang)
+            insertion = []
+            for text in translated:
+                insertion.append({
+                    'par_id': 0,
+                    'text': text,
+                    'label': target_label
+                })
+            logging.info(f"Generated {len(insertion)} ({target_label}) samples")
+            target_class = target_class.append(insertion)
+        logging.info(f"After augumentation: {len(target_class)}/{len(other_class)} samples")
+        self.train_data = pd.concat([target_class, other_class])
+        self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
+        self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
+

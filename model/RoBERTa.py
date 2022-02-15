@@ -27,6 +27,8 @@ class RoBERTa:
     def train(self):
         # Train model
         self.model.train_model(self.data_loader.train_data[['text', 'label']])
+        self.prediction, _ = self.model.predict(self.data_loader.test_data.text.tolist())
+        self.data_loader.eval(self.data_loader.test_data.label.tolist(), self.prediction)
 
     def predict(self):
         self.prediction, _ = self.model.predict(self.data_loader.test_data.text.tolist())

@@ -1,12 +1,20 @@
 from loader.base import BaseLoader
-from transformers import BertForSequenceClassification, AdamW, BertConfig, AutoTokenizer, TrainingArguments, Trainer
+from transformers import BertForSequenceClassification, AdamW, BertConfig, TrainingArguments, Trainer
+from transformers import get_linear_schedule_with_warmup, BertTokenizer
 from datasets import Dataset, load_metric
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
+import torch
 import numpy as np
 import pandas as pd
 import os
+import tqdm
 
 
 class BertBaseUncased:
+    train_epochs = 4
+    batch_size = 8
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
         self.training_args = TrainingArguments("test_trainer",
@@ -31,6 +39,9 @@ class BertBaseUncased:
             local_files_only=local_files_only
         )
         self.model.cuda()
+        self.optimizer = AdamW(self.model.parameters(),
+                               lr=2e-7,
+                               eps=1e-8)
 
     @staticmethod
     def compute_metrics(eval_pred):
@@ -46,40 +57,127 @@ class BertBaseUncased:
 
     @staticmethod
     def tokenize_function(examples):
-        tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-        return tokenizer(examples['text'], padding="max_length", truncation=True)
+        return BertBaseUncased.tokenizer(examples['text'], padding="max_length", truncation=True, add_special_tokens=True)
 
     def train(self):
         self.train_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.train_data))
         self.encoded_train_dataset = self.train_dataset.map(self.tokenize_function, batched=True)
         print(self.encoded_train_dataset)
+        print(self.encoded_train_dataset[0])
         self.test_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.test_data))
-        print(self.test_dataset)
         self.encoded_test_dataset = self.test_dataset.map(self.tokenize_function, batched=True)
         self.trainer = Trainer(model=self.model, args=self.training_args, train_dataset=self.encoded_train_dataset,
                                eval_dataset=self.encoded_test_dataset, compute_metrics=self.compute_metrics)
+        self.train_loader = DataLoader(self.encoded_train_dataset,
+                                       sampler=RandomSampler(self.encoded_train_dataset),
+                                       batch_size=self.batch_size)
+        self.test_loader = DataLoader(self.encoded_test_dataset,
+                                       sampler=RandomSampler(self.encoded_test_dataset),
+                                       batch_size=self.batch_size)
+        self.total_steps = len(self.train_loader) * self.train_epochs
+        self.scheduler = get_linear_schedule_with_warmup(self.optimizer,
+                                                         num_warmup_steps=0,
+                                                         num_training_steps=self.total_steps)
+        for epoch in range(self.train_epochs):
+            self.model.train()
+            with tqdm.tqdm(self.train_loader, unit="batch") as tepoch:
+                for i, data in enumerate(tepoch):
+                    self.model.zero_grad()
+                    result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                        token_type_ids=None,
+                                        attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                        labels=torch.tensor(data['label']).cuda(),
+                                        return_dict=True)
+                    loss = result.loss
+                    logits = result.logits
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                    self.optimizer.step()
+                    self.scheduler.step()
+                    if i % 5 == 0:
+                        tepoch.set_description(f"Epoch {epoch}")
+                        tepoch.set_postfix(Loss=loss.item())
 
-        self.trainer.train()
+            # Evaluation
+            self.model.eval()
+            labels = np.array([])
+            predictions = np.array([])
+            eval_loss = 0
+            with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
+                for i, data in enumerate(tepoch):
+                    with torch.no_grad():
+                        result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                            token_type_ids=None,
+                                            attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                            labels=torch.tensor(data['label']).cuda(),
+                                            return_dict=True)
+                        loss = result.loss
+                        logits = result.logits
+                        eval_loss += loss.item()
+                        onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                        labels = np.concatenate([labels, data['label'].numpy()])
+                        predictions = np.concatenate([predictions, onehot])
+                        tepoch.set_description(f"Evaluation {epoch}")
+                        tepoch.set_postfix(Loss=loss.item())
+            self.data_loader.eval(labels, predictions)
         self.trainer.save_model(os.path.join(self.data_loader.storage_folder, "output"))
         # alternative saving method and folder
         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output"))
 
     def predict(self):
         self.test_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.test_data))
-        print(self.test_dataset)
         self.encoded_test_dataset = self.test_dataset.map(self.tokenize_function, batched=True)
-        self.trainer = Trainer(model=self.model, args=self.training_args,
-                               eval_dataset=self.encoded_test_dataset, compute_metrics=self.compute_metrics)
-
-        result = self.trainer.evaluate()
-        print(result)
+        self.test_loader = DataLoader(self.encoded_test_dataset,
+                                      sampler=RandomSampler(self.encoded_test_dataset),
+                                      batch_size=self.batch_size)
+        self.model.eval()
+        labels = np.array([])
+        predictions = np.array([])
+        eval_loss = 0
+        with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
+            for i, data in enumerate(tepoch):
+                with torch.no_grad():
+                    result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                        token_type_ids=None,
+                                        attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                        labels=torch.tensor(data['label']).cuda(),
+                                        return_dict=True)
+                    loss = result.loss
+                    logits = result.logits
+                    eval_loss += loss.item()
+                    onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                    labels = np.concatenate([labels, data['label'].numpy()])
+                    predictions = np.concatenate([predictions, onehot])
+                    tepoch.set_description(f"Prediction")
+                    tepoch.set_postfix(Loss=loss.item())
+        self.data_loader.eval(labels, predictions)
 
     def final(self):
         self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
         self.encoded_final_dataset = self.final_dataset.map(self.tokenize_function, batched=True)
-        print(self.encoded_final_dataset)
-        self.trainer = Trainer(model=self.model, args=self.training_args)
-        self.prediction, _, _ = self.trainer.predict(test_dataset=self.encoded_final_dataset)
-        print(self.prediction)
-        self.prediction = np.argmax(self.prediction, axis=-1)
-        print(self.prediction)
+        self.final_loader = DataLoader(self.encoded_final_dataset,
+                                      sampler=RandomSampler(self.encoded_final_dataset),
+                                      batch_size=self.batch_size)
+        self.model.eval()
+        labels = np.array([])
+        predictions = np.array([])
+        eval_loss = 0
+        with tqdm.tqdm(self.final_loader, unit="batch") as tepoch:
+            for i, data in enumerate(tepoch):
+                with torch.no_grad():
+                    result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                        token_type_ids=None,
+                                        attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                        labels=torch.tensor(data['label']).cuda(),
+                                        return_dict=True)
+                    loss = result.loss
+                    logits = result.logits
+                    eval_loss += loss.item()
+                    onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                    labels = np.concatenate([labels, data['label'].numpy()])
+                    predictions = np.concatenate([predictions, onehot])
+                    tepoch.set_description(f"Final")
+                    tepoch.set_postfix(Loss=loss.item())
+        self.data_loader.eval(labels, predictions)
+        self.prediction = predictions
+        print(predictions)
