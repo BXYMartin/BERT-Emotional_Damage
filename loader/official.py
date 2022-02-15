@@ -61,6 +61,15 @@ class OfficialLoader(BaseLoader):
         self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
 
     def augmentation(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_filename)):
+            logging.info(f"Using cached balanced dataset from {os.path.join(self.data_dir, self.augmentation_data_filename)}")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
+            logging.info(f"Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
+            #self.train_data = self.train_data.drop_duplicates()
+            #logging.info(
+            #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
+            # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
+            return
         positive_class = self.train_data[self.train_data.label == 1]
         negative_class = self.train_data[self.train_data.label == 0]
         positive_label = len(positive_class)
