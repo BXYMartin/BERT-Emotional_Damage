@@ -17,14 +17,6 @@ class BertBaseUncased:
 
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
-        self.training_args = TrainingArguments("test_trainer",
-                                               num_train_epochs=10,
-                                               logging_dir=os.path.join(self.data_loader.storage_folder, "log"),
-                                               logging_steps=10,
-                                               load_best_model_at_end=True,
-                                               evaluation_strategy="epoch",
-                                               save_strategy="epoch"
-                                               )
         model_name = "bert-base-uncased"
         local_files_only = False
         if load_existing:
@@ -66,8 +58,6 @@ class BertBaseUncased:
         print(self.encoded_train_dataset[0])
         self.test_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.test_data))
         self.encoded_test_dataset = self.test_dataset.map(self.tokenize_function, batched=True)
-        self.trainer = Trainer(model=self.model, args=self.training_args, train_dataset=self.encoded_train_dataset,
-                               eval_dataset=self.encoded_test_dataset, compute_metrics=self.compute_metrics)
         self.train_loader = DataLoader(self.encoded_train_dataset,
                                        sampler=RandomSampler(self.encoded_train_dataset),
                                        batch_size=self.batch_size)
@@ -120,8 +110,6 @@ class BertBaseUncased:
                         tepoch.set_description(f"Evaluation {epoch}")
                         tepoch.set_postfix(Loss=loss.item())
             self.data_loader.eval(labels, predictions)
-        self.trainer.save_model(os.path.join(self.data_loader.storage_folder, "output"))
-        # alternative saving method and folder
         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output"))
 
     def predict(self):

@@ -11,7 +11,7 @@ from loader.base import BaseLoader
 class RoBERTa:
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
-        self.model_args = ClassificationArgs(num_train_epochs=5,
+        self.model_args = ClassificationArgs(num_train_epochs=3,
                                              best_model_dir=os.path.join(loader.storage_folder, "output", "best_model"),
                                              cache_dir=os.path.join(loader.storage_folder, "output", "cache"),
                                              output_dir=os.path.join(loader.storage_folder, "output"),
@@ -35,3 +35,7 @@ class RoBERTa:
 
     def predict(self):
         self.prediction, _ = self.model.predict(self.data_loader.test_data['text'].values.tolist())
+
+    def final(self):
+        self.prediction, _ = self.model.predict(self.data_loader.final_data['text'].values.tolist())
+        print(self.prediction)
