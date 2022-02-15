@@ -9,7 +9,7 @@ from loader.base import BaseLoader
 
 
 class RoBERTa:
-    def __init__(self, loader: BaseLoader):
+    def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
         self.model_args = ClassificationArgs(num_train_epochs=5,
                                              best_model_dir=os.path.join(loader.storage_folder, "output", "best_model"),
@@ -18,8 +18,11 @@ class RoBERTa:
                                              use_multiprocessing=True,
                                              save_best_model=True,
                                              overwrite_output_dir=True)
+        name = 'roberta-base'
+        if load_existing:
+            name = os.path.join(loader.storage_folder, "output", "best_model")
         self.model = ClassificationModel("roberta",
-                                          'roberta-base',
+                                          name,
                                           args=self.model_args,
                                           num_labels=2,
                                           use_cuda=True)
@@ -27,8 +30,8 @@ class RoBERTa:
     def train(self):
         # Train model
         self.model.train_model(self.data_loader.train_data[['text', 'label']])
-        self.prediction, _ = self.model.predict(self.data_loader.test_data.text.tolist())
+        self.prediction, _ = self.model.predict(self.data_loader.test_data['text'].values.tolist())
         self.data_loader.eval(self.data_loader.test_data.label.tolist(), self.prediction)
 
     def predict(self):
-        self.prediction, _ = self.model.predict(self.data_loader.test_data.text.tolist())
+        self.prediction, _ = self.model.predict(self.data_loader.test_data['text'].values.tolist())
