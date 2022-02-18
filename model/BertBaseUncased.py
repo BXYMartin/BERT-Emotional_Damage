@@ -144,28 +144,23 @@ class BertBaseUncased:
         self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
         self.encoded_final_dataset = self.final_dataset.map(self.tokenize_function, batched=True)
         self.final_loader = DataLoader(self.encoded_final_dataset,
-                                      sampler=RandomSampler(self.encoded_final_dataset),
+                                      sampler=SequentialSampler(self.encoded_final_dataset),
                                       batch_size=self.batch_size)
         self.model.eval()
-        labels = np.array([])
         predictions = np.array([])
-        eval_loss = 0
         with tqdm.tqdm(self.final_loader, unit="batch") as tepoch:
             for i, data in enumerate(tepoch):
                 with torch.no_grad():
                     result = self.model(torch.stack(data['input_ids']).T.cuda(),
                                         token_type_ids=None,
                                         attention_mask=torch.stack(data['attention_mask']).T.cuda(),
-                                        labels=torch.tensor(data['label']).cuda(),
                                         return_dict=True)
                     loss = result.loss
                     logits = result.logits
-                    eval_loss += loss.item()
                     onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
-                    labels = np.concatenate([labels, data['label'].numpy()])
                     predictions = np.concatenate([predictions, onehot])
                     tepoch.set_description(f"Final")
                     tepoch.set_postfix(Loss=loss.item())
-        self.data_loader.eval(labels, predictions)
+        self.data_loader.final(predictions)
         self.prediction = predictions
         print(predictions)
