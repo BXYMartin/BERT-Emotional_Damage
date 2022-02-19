@@ -10,15 +10,18 @@ import pandas as pd
 import os
 import tqdm
 
+
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
+
 class DebertaBase:
-    train_epochs = 2
+    train_epochs = 6
     batch_size = 8
     tokenizer = DebertaTokenizer.from_pretrained("microsoft/deberta-base")
+
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
         model_name = "microsoft/deberta-base"
@@ -54,11 +57,11 @@ class DebertaBase:
     @staticmethod
     def tokenize_function(examples):
         return DebertaBase.tokenizer(examples['text'],
-                          add_special_tokens = True,
-                          padding = 'max_length',
-                          max_length = 256,
-                          return_attention_mask = True,
-                          truncation = True)
+                                     add_special_tokens=True,
+                                     padding='max_length',
+                                     max_length=256,
+                                     return_attention_mask=True,
+                                     truncation=True)
 
     def train(self):
         self.train_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.train_data))
@@ -80,6 +83,7 @@ class DebertaBase:
         self.scheduler = get_linear_schedule_with_warmup(self.optimizer,
                                                          num_warmup_steps=0,
                                                          num_training_steps=self.total_steps)
+
         for epoch in range(self.train_epochs):
             self.model.train()
             with tqdm.tqdm(self.train_loader, unit="batch") as tepoch:
@@ -91,7 +95,6 @@ class DebertaBase:
                                         labels=torch.tensor(data['label']).cuda(),
                                         return_dict=True)
                     loss = result.loss
-                    logits = result.logits
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                     self.optimizer.step()
@@ -128,6 +131,7 @@ class DebertaBase:
             # avg_val_loss = eval_loss / len(self.test_loader)
 
             self.data_loader.eval(labels, predictions)
+            self.final(str(epoch))
         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output"))
 
     def predict(self):
@@ -158,7 +162,7 @@ class DebertaBase:
                     tepoch.set_postfix(Loss=loss.item())
         self.data_loader.eval(labels, predictions)
 
-    def final(self):
+    def final(self, epoch_num=''):
         self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
         self.encoded_final_dataset = self.final_dataset.map(self.tokenize_function, batched=True)
         self.final_loader = DataLoader(self.encoded_final_dataset,
@@ -179,6 +183,6 @@ class DebertaBase:
                     predictions = np.concatenate([predictions, onehot])
                     tepoch.set_description(f"Final")
                     tepoch.set_postfix(Loss=loss)
-        self.data_loader.final(predictions)
         self.prediction = predictions
+        self.data_loader.final(predictions, epoch_num)
         print(predictions)

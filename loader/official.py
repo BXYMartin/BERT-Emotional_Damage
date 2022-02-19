@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(leve
 class OfficialLoader(BaseLoader):
     name = "Split"
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
-    official_train_data_filename = "official_split_train_dataset_AAA.csv"
+    official_train_data_filename = "official_split_train_dataset_AAA_truncation.csv"
     official_test_data_filename = "official_split_test_dataset.csv"
     augmentation_data_all_filename = "back_translation_balanced_dataset_all.csv"
 
@@ -250,11 +250,11 @@ class OfficialLoader(BaseLoader):
         self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
         self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
 
-    def process(self):
-        if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_all_filename)):
+    def process(self, input_name, output_name):
+        if os.path.isfile(os.path.join(self.data_dir, input_name)):
             logging.info(
-                f"[process] Using cached balanced dataset from {os.path.join(self.data_dir, self.augmentation_data_all_filename)}")
-            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
+                f"[process] Using cached balanced dataset from {os.path.join(self.data_dir, input_name)}")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name))
             logging.info(
                 f"[process] Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
             # self.train_data = self.train_data.drop_duplicates()
@@ -262,7 +262,46 @@ class OfficialLoader(BaseLoader):
             #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
             # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
             print((self.train_data.head()))
-            self.train_data = self.train_data.drop(columns=['Unnamed: 0', 'Unnamed: 0.1'])
-            print('[process] after drop\n')
+            count = 0
+            for idx, row in self.train_data.iterrows():
+                if len(row['text']) > 512:
+                    count += 1
+                    self.train_data.loc[idx, 'text'] = row['text'][:128] + row['text'][-384:]
+                    # row['text'] = row['text'][:128] + row['text'][-384:]
+            print(f'[process] before truncation, count = {count}\n')
+            count = 0
+            for idx, row in self.train_data.iterrows():
+                if len(row['text']) > 512:
+                    count += 1
+            print(f'[process] after truncation, count = {count}\n')
             print((self.train_data.head()))
-            self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
+            self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
+            print((self.train_data.head()))
+            self.train_data.to_csv(os.path.join(self.data_dir, output_name))
+        # if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_all_filename)):
+        #     logging.info(
+        #         f"[process] Using cached balanced dataset from {os.path.join(self.data_dir, self.augmentation_data_all_filename)}")
+        #     self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
+        #     logging.info(
+        #         f"[process] Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
+        #     # self.train_data = self.train_data.drop_duplicates()
+        #     # logging.info(
+        #     #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
+        #     # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
+        #     print((self.train_data.head()))
+        #     count = 0
+        #     for idx, row in self.train_data.iterrows():
+        #         if len(row['text']) > 512:
+        #             count += 1
+        #             self.train_data.loc[idx, 'text'] = row['text'][:128] + row['text'][-384:]
+        #             # row['text'] = row['text'][:128] + row['text'][-384:]
+        #     print(f'[process] before truncation, count = {count}\n')
+        #     count = 0
+        #     for idx, row in self.train_data.iterrows():
+        #         if len(row['text']) > 512:
+        #             count += 1
+        #     print(f'[process] after truncation, count = {count}\n')
+        #     print((self.train_data.head()))
+        #     self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
+        #     print((self.train_data.head()))
+        #     self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))

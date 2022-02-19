@@ -9,6 +9,9 @@ import pandas as pd
 from spec.task import DontPatronizeMe
 from datetime import datetime
 
+logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                    level=logging.INFO)
+
 
 class BaseLoader:
     base_dir = "runtime"
@@ -59,12 +62,13 @@ class BaseLoader:
         logging.debug(f"Final evaluation data header:")
         logging.debug(self.final_data.head())
 
-    def final(self, labels):
+    def final(self, labels, epoch_num=''):
         file_path = os.path.join(self.res_dir, self.final_filename)
+        file_path += f'_{epoch_num}'
         with open(file_path, "w") as final_file:
             for label in labels:
                 final_file.write(str(int(label)) + "\n")
-        logging.info(f"Final result written to {file_path}")
+        logging.critical(f"Final result written to {file_path}")
 
     def eval(self, labels, predictions):
         task_confusion_matrix = confusion_matrix(labels, predictions)

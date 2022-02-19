@@ -8,6 +8,8 @@ os.environ["WANDB_DISABLED"] = "true"
 from loader.official import OfficialLoader
 from model.DebertaBase import DebertaBase
 from model.RobertaBaseFrenkHate import RobertaBaseFrenkHate
+from model.DebertaLarge import DebertaLarge
+from model.DebertaV2XLarge import DebertaV2XLarge
 
 
 class DebertaBaseTestCase(unittest.TestCase):
@@ -20,6 +22,7 @@ class DebertaBaseTestCase(unittest.TestCase):
         data_loader = OfficialLoader("Official-DebertaBaseUncased-Test-Case")
         data_loader.split_upsample()
         # data_loader.augmentation()
+        # data_loader.augmentation_all()
         model = DebertaBase(data_loader)
         model.train()
         self.assertEqual(True, True)
@@ -38,6 +41,11 @@ class DebertaBaseTestCase(unittest.TestCase):
         model = DebertaBase(data_loader, load_existing=True)
         model.final()
         data_loader.final(model.prediction)
+        self.assertEqual(True, True)
+
+    def test_process(self):
+        data_loader = OfficialLoader()
+        data_loader.process('official_split_train_dataset_AAA.csv', 'official_split_train_dataset_AAA_truncation.csv')
         self.assertEqual(True, True)
 
 
@@ -83,6 +91,109 @@ class RobertaBaseFrenkHateTestCase(unittest.TestCase):
         model.final()
         data_loader.final(model.prediction)
         self.assertEqual(True, True)
+
+    def test_final_path(self):
+        data_loader = OfficialLoader("Official-RobertaBaseFrenkHate-Test-Case")
+        model = RobertaBaseFrenkHate(data_loader, load_existing=True)
+        model.final('0')
+
+
+class DebertaLargeTestCase(unittest.TestCase):
+    def test_process(self):
+        data_loader = OfficialLoader()
+        data_loader.process()
+        self.assertEqual(True, True)
+
+    def test_split_upsample(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        self.assertEqual(True, True)
+
+    def test_augment_all(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        data_loader.augmentation_all()
+        self.assertEqual(True, True)
+
+    def test_train(self):
+        data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
+        data_loader.split_upsample()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaLarge(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_predict(self):
+        data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
+        data_loader.split()
+        # data_loader.balance()
+        model = DebertaLarge(data_loader, load_existing=True)
+        model.predict()
+        self.assertEqual(True, True)
+
+    def test_final(self):
+        data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
+        model = DebertaLarge(data_loader, load_existing=True)
+        model.final()
+        data_loader.final(model.prediction)
+        self.assertEqual(True, True)
+
+    def test_final_path(self):
+        data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
+        model = DebertaLarge(data_loader, load_existing=True)
+        model.final('0')
+
+
+class DebertaV2XLargeTestCase(unittest.TestCase):
+    def test_process(self):
+        data_loader = OfficialLoader()
+        # data_loader.process()
+        self.assertEqual(True, True)
+
+    def test_split_upsample(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        self.assertEqual(True, True)
+
+    def test_augment_all(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        data_loader.augmentation_all()
+        self.assertEqual(True, True)
+
+    def test_train(self):
+        data_loader = OfficialLoader("Official-DebertaV2XLarge-Test-Case")
+        data_loader.split_upsample()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaV2XLarge(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_predict(self):
+        data_loader = OfficialLoader("Official-DebertaV2XLarge-Test-Case")
+        data_loader.split()
+        # data_loader.balance()
+        model = DebertaV2XLarge(data_loader, load_existing=True)
+        model.predict()
+        self.assertEqual(True, True)
+
+    def test_final(self):
+        data_loader = OfficialLoader("Official-DebertaV2XLarge-Test-Case")
+        model = DebertaV2XLarge(data_loader, load_existing=True)
+        model.final()
+        data_loader.final(model.prediction)
+        self.assertEqual(True, True)
+
+    def test_final_path(self):
+        data_loader = OfficialLoader("Official-DebertaV2XLarge-Test-Case")
+        model = DebertaV2XLarge(data_loader, load_existing=True)
+        model.final('0')
 
 
 if __name__ == '__main__':

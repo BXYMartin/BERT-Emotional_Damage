@@ -12,15 +12,18 @@ import pandas as pd
 import os
 import tqdm
 
+
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
+
 class RobertaBaseFrenkHate:
-    train_epochs = 4
+    train_epochs = 8
     batch_size = 4
     tokenizer = RobertaTokenizer.from_pretrained("classla/roberta-base-frenk-hate")
+
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
         model_name = "classla/roberta-base-frenk-hate"
@@ -38,8 +41,29 @@ class RobertaBaseFrenkHate:
         )
 
         self.model.cuda()
-        self.optimizer = AdamW(self.model.parameters(),
-                               lr=2e-5, eps=1e-8)
+
+        def get_parameters(model, model_init_lr, multiplier, classifier_lr):
+            parameters = []
+            lr = model_init_lr
+            for layer in range(12, -1, -1):
+                layer_params = {
+                    'params': [p for n, p in model.named_parameters() if f'encoder.layer.{layer}.' in n],
+                    'lr': lr
+                }
+                parameters.append(layer_params)
+                lr *= multiplier
+            classifier_params = {
+                'params': [p for n, p in model.named_parameters() if 'layer_norm' in n or 'linear' in n
+                           or 'pooling' in n],
+                'lr': classifier_lr
+            }
+            parameters.append(classifier_params)
+            return parameters
+
+        parameters = get_parameters(self.model, 2e-5, 0.95, 1e-4)
+        self.optimizer = AdamW(parameters)
+        # self.optimizer = AdamW(self.model.parameters(),
+        #                        lr=2e-5, eps=1e-8)
 
     @staticmethod
     def compute_metrics(eval_pred):
@@ -56,11 +80,11 @@ class RobertaBaseFrenkHate:
     @staticmethod
     def tokenize_function(examples):
         return RobertaBaseFrenkHate.tokenizer(examples['text'],
-                          add_special_tokens = True,
-                          padding = 'max_length',
-                          max_length = 512,
-                          return_attention_mask = True,
-                          truncation = True)
+                                              add_special_tokens=True,
+                                              padding='max_length',
+                                              max_length=512,
+                                              return_attention_mask=True,
+                                              truncation=True)
 
     def train(self):
         self.train_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.train_data))
@@ -130,6 +154,7 @@ class RobertaBaseFrenkHate:
             # avg_val_loss = eval_loss / len(self.test_loader)
 
             self.data_loader.eval(labels, predictions)
+            self.final(epoch)
         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output"))
 
     def predict(self):
@@ -160,7 +185,7 @@ class RobertaBaseFrenkHate:
                     tepoch.set_postfix(Loss=loss.item())
         self.data_loader.eval(labels, predictions)
 
-    def final(self):
+    def final(self, epoch_num=''):
         self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
         self.encoded_final_dataset = self.final_dataset.map(self.tokenize_function, batched=True)
         self.final_loader = DataLoader(self.encoded_final_dataset,
@@ -181,6 +206,6 @@ class RobertaBaseFrenkHate:
                     predictions = np.concatenate([predictions, onehot])
                     tepoch.set_description(f"Final")
                     tepoch.set_postfix(Loss=loss)
-        self.data_loader.final(predictions)
         self.prediction = predictions
+        self.data_loader.final(predictions, epoch_num)
         print(predictions)
