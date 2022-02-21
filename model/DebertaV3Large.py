@@ -1,5 +1,7 @@
+import transformers
+
 from loader.base import BaseLoader
-from transformers import DebertaTokenizer, DebertaForSequenceClassification, AdamW, BertConfig, TrainingArguments, \
+from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification, AdamW, BertConfig, TrainingArguments, \
     Trainer
 from transformers import get_linear_schedule_with_warmup, BertTokenizer
 from datasets import Dataset, load_metric
@@ -17,19 +19,19 @@ def flat_accuracy(preds, labels):
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
 
-class DebertaBase:
+class DebertaV3Large:
     train_epochs = 6
-    batch_size = 8
-    tokenizer = DebertaTokenizer.from_pretrained("microsoft/deberta-base")
+    batch_size = 4
+    tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v3-large")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
-        model_name = "microsoft/deberta-base"
+        model_name = "microsoft/deberta-v3-large"
         local_files_only = False
         if load_existing:
             model_name = os.path.join(self.data_loader.storage_folder, "output")
             local_files_only = True
-        self.model = DebertaForSequenceClassification.from_pretrained(
+        self.model = DebertaV2ForSequenceClassification.from_pretrained(
             model_name,
             num_labels=2,
             output_attentions=False,
@@ -37,30 +39,31 @@ class DebertaBase:
             cache_dir="/vol/bitbucket/ya321/.cache",
             local_files_only=local_files_only
         )
-
+        self.model.half()
         self.model.cuda()
-        def get_parameters(model, model_init_lr, multiplier, classifier_lr):
-            parameters = []
-            lr = model_init_lr
-            for layer in range(12, -1, -1):
-                layer_params = {
-                    'params': [p for n, p in model.named_parameters() if f'encoder.layer.{layer}.' in n],
-                    'lr': lr
-                }
-                parameters.append(layer_params)
-                lr *= multiplier
-            classifier_params = {
-                'params': [p for n, p in model.named_parameters() if 'layer_norm' in n or 'linear' in n
-                           or 'pooling' in n],
-                'lr': classifier_lr
-            }
-            parameters.append(classifier_params)
-            return parameters
 
-        parameters = get_parameters(self.model, 2e-5, 0.95, 1e-4)
-        self.optimizer = AdamW(parameters)
-        # self.optimizer = AdamW(self.model.parameters(),
-        #                        lr=2e-5, eps=1e-8)
+        # def get_parameters(model, model_init_lr, multiplier, classifier_lr):
+        #     parameters = []
+        #     lr = model_init_lr
+        #     for layer in range(12, -1, -1):
+        #         layer_params = {
+        #             'params': [p for n, p in model.named_parameters() if f'encoder.layer.{layer}.' in n],
+        #             'lr': lr
+        #         }
+        #         parameters.append(layer_params)
+        #         lr *= multiplier
+        #     classifier_params = {
+        #         'params': [p for n, p in model.named_parameters() if 'layer_norm' in n or 'linear' in n
+        #                    or 'pooling' in n],
+        #         'lr': classifier_lr
+        #     }
+        #     parameters.append(classifier_params)
+        #     return parameters
+        #
+        # parameters = get_parameters(self.model, 2e-5, 0.95, 1e-4)
+        # self.optimizer = AdamW(parameters)
+        self.optimizer = AdamW(self.model.parameters(),
+                               lr=2e-5, eps=1e-4)
 
     @staticmethod
     def compute_metrics(eval_pred):
@@ -76,12 +79,12 @@ class DebertaBase:
 
     @staticmethod
     def tokenize_function(examples):
-        return DebertaBase.tokenizer(examples['text'],
-                                     add_special_tokens=True,
-                                     padding='max_length',
-                                     max_length=256,
-                                     return_attention_mask=True,
-                                     truncation=True)
+        return DebertaV3Large.tokenizer(examples['text'],
+                                              add_special_tokens=True,
+                                              padding='max_length',
+                                              max_length=512,
+                                              return_attention_mask=True,
+                                              truncation=True)
 
     def train(self):
         self.train_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.train_data))

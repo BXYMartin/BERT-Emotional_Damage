@@ -20,7 +20,8 @@ logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(leve
 class OfficialLoader(BaseLoader):
     name = "Split"
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
-    official_train_data_filename = "official_split_train_dataset_AAA_truncation.csv"
+    official_train_data_filename = "official_split_train_dataset_AAA.csv"
+    official_train_data_truncation_filename = "official_split_train_dataset_AAA_truncation.csv"
     official_test_data_filename = "official_split_test_dataset.csv"
     augmentation_data_all_filename = "back_translation_balanced_dataset_all.csv"
 
@@ -125,6 +126,15 @@ class OfficialLoader(BaseLoader):
         self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
         self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
 
+    def split_upsample_truncation(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_truncation_filename)) and os.path.isfile(
+                os.path.join(self.data_dir, self.official_test_data_filename)):
+            logging.info(f"Using cached official split files.")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_truncation_filename))
+            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_filename))
+            logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            return
     def split_upsample(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_filename)) and os.path.isfile(
                 os.path.join(self.data_dir, self.official_test_data_filename)):

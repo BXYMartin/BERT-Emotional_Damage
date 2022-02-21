@@ -21,7 +21,7 @@ def flat_accuracy(preds, labels):
 
 class DebertaLarge:
     train_epochs = 6
-    batch_size = 1
+    batch_size = 4
     tokenizer = DebertaTokenizer.from_pretrained("microsoft/deberta-large")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
@@ -39,7 +39,7 @@ class DebertaLarge:
             cache_dir="/vol/bitbucket/ya321/.cache",
             local_files_only=local_files_only
         )
-
+        self.model.half()
         self.model.cuda()
 
         # def get_parameters(model, model_init_lr, multiplier, classifier_lr):
@@ -63,7 +63,7 @@ class DebertaLarge:
         # parameters = get_parameters(self.model, 2e-5, 0.95, 1e-4)
         # self.optimizer = AdamW(parameters)
         self.optimizer = AdamW(self.model.parameters(),
-                               lr=2e-5, eps=1e-8)
+                               lr=2e-5, eps=1e-4)
 
     @staticmethod
     def compute_metrics(eval_pred):
@@ -154,7 +154,7 @@ class DebertaLarge:
             # avg_val_loss = eval_loss / len(self.test_loader)
 
             self.data_loader.eval(labels, predictions)
-            self.final(epoch)
+            self.final(str(epoch))
         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output"))
 
     def predict(self):

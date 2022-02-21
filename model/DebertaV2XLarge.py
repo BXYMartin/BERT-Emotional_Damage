@@ -21,7 +21,7 @@ def flat_accuracy(preds, labels):
 
 class DebertaV2XLarge:
     train_epochs = 6
-    batch_size = 1
+    batch_size = 4
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
@@ -39,7 +39,7 @@ class DebertaV2XLarge:
             cache_dir="/vol/bitbucket/ya321/.cache",
             local_files_only=local_files_only
         )
-
+        self.model.half()
         self.model.cuda()
 
         # def get_parameters(model, model_init_lr, multiplier, classifier_lr):
@@ -63,7 +63,7 @@ class DebertaV2XLarge:
         # parameters = get_parameters(self.model, 2e-5, 0.95, 1e-4)
         # self.optimizer = AdamW(parameters)
         self.optimizer = AdamW(self.model.parameters(),
-                               lr=2e-5, eps=1e-8)
+                               lr=2e-5, eps=1e-4)
 
     @staticmethod
     def compute_metrics(eval_pred):
@@ -82,7 +82,7 @@ class DebertaV2XLarge:
         return DebertaV2XLarge.tokenizer(examples['text'],
                                               add_special_tokens=True,
                                               padding='max_length',
-                                              max_length=512,
+                                              max_length=256,
                                               return_attention_mask=True,
                                               truncation=True)
 

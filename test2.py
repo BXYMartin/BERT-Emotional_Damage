@@ -10,6 +10,7 @@ from model.DebertaBase import DebertaBase
 from model.RobertaBaseFrenkHate import RobertaBaseFrenkHate
 from model.DebertaLarge import DebertaLarge
 from model.DebertaV2XLarge import DebertaV2XLarge
+from model.DebertaV3Large import DebertaV3Large
 
 
 class DebertaBaseTestCase(unittest.TestCase):
@@ -126,6 +127,17 @@ class DebertaLargeTestCase(unittest.TestCase):
         self.assertEqual(True, True)
         pass
 
+    def test_train_512(self):
+        data_loader = OfficialLoader("Official-DebertaLarge512-Test-Case")
+        data_loader.split_upsample()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaLarge(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
     def test_predict(self):
         data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
         data_loader.split()
@@ -193,6 +205,65 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
     def test_final_path(self):
         data_loader = OfficialLoader("Official-DebertaV2XLarge-Test-Case")
         model = DebertaV2XLarge(data_loader, load_existing=True)
+        model.final('0')
+
+class DebertaV3LargeTestCase(unittest.TestCase):
+    def test_process(self):
+        data_loader = OfficialLoader()
+        data_loader.process()
+        self.assertEqual(True, True)
+
+    def test_split_upsample(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        self.assertEqual(True, True)
+
+    def test_augment_all(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample()
+        data_loader.augmentation_all()
+        self.assertEqual(True, True)
+
+    def test_train(self):
+        data_loader = OfficialLoader("Official-DebertaV3Large-Test-Case")
+        data_loader.split_upsample()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaV3Large(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_train_512(self):
+        data_loader = OfficialLoader("Official-DebertaV3Large512-Test-Case")
+        data_loader.split_upsample()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaV3Large(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+    def test_predict(self):
+        data_loader = OfficialLoader("Official-DebertaV3Large-Test-Case")
+        data_loader.split()
+        # data_loader.balance()
+        model = DebertaV3Large(data_loader, load_existing=True)
+        model.predict()
+        self.assertEqual(True, True)
+
+    def test_final(self):
+        data_loader = OfficialLoader("Official-DebertaV3Large-Test-Case")
+        model = DebertaV3Large(data_loader, load_existing=True)
+        model.final()
+        data_loader.final(model.prediction)
+        self.assertEqual(True, True)
+
+    def test_final_path(self):
+        data_loader = OfficialLoader("Official-DebertaV3Large-Test-Case")
+        model = DebertaV3Large(data_loader, load_existing=True)
         model.final('0')
 
 
