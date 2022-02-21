@@ -19,6 +19,11 @@ class DebertaBaseTestCase(unittest.TestCase):
         data_loader.split_upsample()
         self.assertEqual(True, True)
 
+    def test_split_upsample_all(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample_all()
+        self.assertEqual(True, True)
+
     def test_train(self):
         data_loader = OfficialLoader("Official-DebertaBaseUncased-Test-Case")
         data_loader.split_upsample()
@@ -47,6 +52,11 @@ class DebertaBaseTestCase(unittest.TestCase):
     def test_process(self):
         data_loader = OfficialLoader()
         data_loader.process('official_split_train_dataset_AAA.csv', 'official_split_train_dataset_AAA_truncation.csv')
+        data_loader.process('official_split_test_dataset.csv', 'official_split_test_dataset_truncation.csv')
+        data_loader.process('official_split_train_dataset_AAA_all.csv',
+                            'official_split_train_dataset_AAA_all_truncation.csv')
+        data_loader.process('dontpatronizeme_test.tsv',
+                            data_loader.official_final_data_truncation_filename)
         self.assertEqual(True, True)
 
 
@@ -207,6 +217,7 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
         model = DebertaV2XLarge(data_loader, load_existing=True)
         model.final('0')
 
+
 class DebertaV3LargeTestCase(unittest.TestCase):
     def test_process(self):
         data_loader = OfficialLoader()
@@ -235,9 +246,9 @@ class DebertaV3LargeTestCase(unittest.TestCase):
         self.assertEqual(True, True)
         pass
 
-    def test_train_512(self):
-        data_loader = OfficialLoader("Official-DebertaV3Large512-Test-Case")
-        data_loader.split_upsample()
+    def test_train_truncation(self):
+        data_loader = OfficialLoader("Official-DebertaV3LargeTruncation-Test-Case")
+        data_loader.split_upsample_truncation()
         # data_loader.augmentation()
         # data_loader.augmentation_all()
         model = DebertaV3Large(data_loader)

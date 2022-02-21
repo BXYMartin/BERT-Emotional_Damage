@@ -25,7 +25,9 @@ class OfficialLoader(BaseLoader):
     official_train_data_all_filename = "official_split_train_dataset_AAA_all.csv"
     official_train_data_truncation_filename = "official_split_train_dataset_AAA_truncation.csv"
     official_test_data_filename = "official_split_test_dataset.csv"
+    official_test_data_truncation_filename = "official_split_test_dataset_truncation.csv"
     augmentation_data_all_filename = "back_translation_balanced_dataset_all.csv"
+    official_final_data_truncation_filename = "official_final_dataset_truncation.csv"
 
     def __init__(self, token=""):
         super().__init__(token)
@@ -131,9 +133,14 @@ class OfficialLoader(BaseLoader):
     def split_upsample_truncation(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_truncation_filename)) and os.path.isfile(
                 os.path.join(self.data_dir, self.official_test_data_filename)):
-            logging.info(f"Using cached official split files: {self.official_train_data_truncation_filename}")
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_truncation_filename))
-            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_filename))
+            logging.info(f"[split_upsample_truncation] Using cached train_data: {self.official_train_data_truncation_filename}")
+            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_truncation_filename))
+            logging.info(f"[split_upsample_truncation] Using cached test_data: {self.official_test_data_truncation_filename}")
+            self.final_data = pd.DataFrame(
+                pd.read_csv(os.path.join(self.data_dir, self.official_final_data_truncation_filename)))
+            logging.info(
+                f"[split_upsample_truncation] Using cached final_data: {self.official_final_data_truncation_filename}")
             logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             print(
                 f"[split_upsample_truncation] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
@@ -304,12 +311,19 @@ class OfficialLoader(BaseLoader):
         self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
 
     def process(self, input_name, output_name):
+        if os.path.isfile(os.path.join(self.data_dir, output_name)):
+            logging.info(
+                f"[process] output file exists: {os.path.join(self.data_dir, output_name)}")
+            return
         if os.path.isfile(os.path.join(self.data_dir, input_name)):
+
             logging.info(
-                f"[process] Using cached balanced dataset from {os.path.join(self.data_dir, input_name)}")
-            self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name))
-            logging.info(
-                f"[process] Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
+                f"[process] input from {os.path.join(self.data_dir, input_name)}")
+            if input_name[-3:] == 'tsv':
+                self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name), sep='\t',
+                                              names=['par_id', 'art_id', 'keyword', 'country', 'text'])
+            else:
+                self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name))
             # self.train_data = self.train_data.drop_duplicates()
             # logging.info(
             #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
@@ -317,6 +331,8 @@ class OfficialLoader(BaseLoader):
             print((self.train_data.head()))
             count = 0
             for idx, row in self.train_data.iterrows():
+                if not isinstance(row['text'], str):
+                    continue
                 if len(row['text']) > 512:
                     count += 1
                     self.train_data.loc[idx, 'text'] = row['text'][:128] + row['text'][-384:]
@@ -324,11 +340,14 @@ class OfficialLoader(BaseLoader):
             print(f'[process] before truncation, count = {count}\n')
             count = 0
             for idx, row in self.train_data.iterrows():
+                if not isinstance(row['text'], str):
+                    continue
                 if len(row['text']) > 512:
                     count += 1
             print(f'[process] after truncation, count = {count}\n')
             print((self.train_data.head()))
-            self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
+            if 'Unnamed: 0' in self.train_data.columns:
+                self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
             print((self.train_data.head()))
             self.train_data.to_csv(os.path.join(self.data_dir, output_name))
         # if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_all_filename)):
