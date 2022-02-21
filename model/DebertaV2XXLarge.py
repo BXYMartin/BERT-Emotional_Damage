@@ -19,16 +19,16 @@ def flat_accuracy(preds, labels):
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
 
-class DebertaV2XLarge:
+class DebertaV2XXLarge:
     train_epochs = 3
     eval_while_training = True
     eval_step_size = 500
     batch_size = 3
-    tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
+    tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xxlarge")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
         self.data_loader = loader
-        model_name = "microsoft/deberta-v2-xlarge"
+        model_name = "microsoft/deberta-v2-xxlarge"
         local_files_only = False
         if load_existing:
             model_name = os.path.join(self.data_loader.storage_folder, "output")
