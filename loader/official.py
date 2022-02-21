@@ -12,6 +12,7 @@ from spec.task import DontPatronizeMe
 from datetime import datetime
 from imblearn.over_sampling import RandomOverSampler
 from collections import Counter
+from loader.dont_patronize_me import DontPatronizeMe
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.INFO)
@@ -21,6 +22,7 @@ class OfficialLoader(BaseLoader):
     name = "Split"
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
     official_train_data_filename = "official_split_train_dataset_AAA.csv"
+    official_train_data_all_filename = "official_split_train_dataset_AAA_all.csv"
     official_train_data_truncation_filename = "official_split_train_dataset_AAA_truncation.csv"
     official_test_data_filename = "official_split_test_dataset.csv"
     augmentation_data_all_filename = "back_translation_balanced_dataset_all.csv"
@@ -129,14 +131,16 @@ class OfficialLoader(BaseLoader):
     def split_upsample_truncation(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_truncation_filename)) and os.path.isfile(
                 os.path.join(self.data_dir, self.official_test_data_filename)):
-            logging.info(f"Using cached official split files.")
+            logging.info(f"Using cached official split files: {self.official_train_data_truncation_filename}")
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_truncation_filename))
             self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_filename))
             logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
-            print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            print(
+                f"[split_upsample_truncation] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             return
+
     def split_upsample(self):
-        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_filename)) and os.path.isfile(
+        if os.path.isfile(os.path.join(self.data_dir, self.all_data_filename)) and os.path.isfile(
                 os.path.join(self.data_dir, self.official_test_data_filename)):
             logging.info(f"Using cached official split files.")
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_filename))
@@ -145,7 +149,7 @@ class OfficialLoader(BaseLoader):
             print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             return
         logging.info(f"Performing split using official split files.")
-        train_ids = pd.read_csv(os.path.join(self.data_dir, self.train_split_filename))
+        train_ids = pd.read_csv(os.path.join(self.data_dir, self.all_data_filename))
         dev_ids = pd.read_csv(os.path.join(self.data_dir, self.dev_split_filename))
         train_ids.par_id = train_ids.par_id.astype(str)
         dev_ids.par_id = dev_ids.par_id.astype(str)
@@ -201,6 +205,45 @@ class OfficialLoader(BaseLoader):
         self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_filename))
         self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_filename))
         logging.info(f"Successfully split TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+
+    def split_upsample_all(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_filename)):
+            logging.info(f"Using cached official split files: {self.official_train_data_all_filename}")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_filename))
+            return
+        dpm = DontPatronizeMe(self.data_dir, 'dontpatronizeme_pcl.tsv')
+        dpm.load_task1()
+        train_df = dpm.train_task1_df
+        print(train_df.head())
+        logging.info(f"Performing split using official split files.")
+        self.train_data = train_df
+        oversampler = RandomOverSampler(sampling_strategy='minority')
+        print(f"x_train.shape = {self.train_data.shape}")
+        x = np.array(self.train_data[['par_id', 'text']])
+        y = np.array(self.train_data['label'])
+        oversample_x, oversample_y = oversampler.fit_resample(x,
+                                                              y)
+        # oversample_x = oversample_x.ravel()
+        print(f"oversample_x.shape = {oversample_x.shape}\toversample_y.shape = {oversample_y.shape}")
+        print(Counter(oversample_y))
+        self.train_data = []
+        for i in range(len(oversample_x)):
+            # df.at[4, 'B']
+            par_id = oversample_x[i][0]
+            text = oversample_x[i][1]
+            # print(f'par_id={par_id}\ttext={text}')
+            label = oversample_y[i]
+            # print(f'label = {label}')
+            self.train_data.append({
+                'par_id': par_id,
+                'text': text,
+                'label': label
+            })
+        self.train_data = pd.DataFrame(self.train_data)
+        print(self.train_data['label'].value_counts())
+        print(f'final self.train_data.head =\n{self.train_data.head}')
+        self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_all_filename))
+        logging.info(f"Successfully split TEST({len(self.train_data)}).")
 
     def augmentation_all(self):
         if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_all_filename)):
