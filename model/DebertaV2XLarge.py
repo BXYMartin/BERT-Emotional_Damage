@@ -127,7 +127,7 @@ class DebertaV2XLarge:
                     if i % 5 == 0:
                         tepoch.set_description(f"Epoch {epoch}")
                         tepoch.set_postfix(Loss=loss.item())
-                    if i % self.eval_step_size == 0 and epoch >= 1:
+                    if i % self.eval_step_size == 0 and epoch >= 0 and i != 0:
                         # Performing eval in the middle of training
 
                         # Evaluation
