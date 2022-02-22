@@ -24,6 +24,7 @@ class DebertaV2XLarge:
     eval_while_training = True
     eval_step_size = 500
     batch_size = 3
+    skip_eval = True
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
@@ -132,32 +133,33 @@ class DebertaV2XLarge:
 
                         # Evaluation
                         self.model.eval()
-                        labels = np.array([])
-                        predictions = np.array([])
-                        eval_loss = 0
-                        # total_eval_accuracy = 0
-                        with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
-                            for _, data in enumerate(tepoch):
-                                with torch.no_grad():
-                                    result = self.model(torch.stack(data['input_ids']).T.cuda(),
-                                                        token_type_ids=None,
-                                                        attention_mask=torch.stack(data['attention_mask']).T.cuda(),
-                                                        labels=torch.tensor(data['label']).cuda(),
-                                                        return_dict=True)
-                                    loss = result.loss
-                                    logits = result.logits
-                                    label_ids = torch.tensor(data['label']).numpy()
-                                    # total_eval_accuracy += flat_accuracy(logits, label_ids)
-                                    eval_loss += loss.item()
-                                    onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
-                                    labels = np.concatenate([labels, data['label'].numpy()])
-                                    predictions = np.concatenate([predictions, onehot])
-                                    tepoch.set_description(f"Evaluation {epoch}")
-                                    tepoch.set_postfix(Loss=loss.item())
-                        # avg_val_accuracy = total_eval_accuracy / len(self.test_loader)
-                        # avg_val_loss = eval_loss / len(self.test_loader)
+                        if skip_eval:
+                            labels = np.array([])
+                            predictions = np.array([])
+                            eval_loss = 0
+                            # total_eval_accuracy = 0
+                            with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
+                                for _, data in enumerate(tepoch):
+                                    with torch.no_grad():
+                                        result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                                            token_type_ids=None,
+                                                            attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                                            labels=torch.tensor(data['label']).cuda(),
+                                                            return_dict=True)
+                                        loss = result.loss
+                                        logits = result.logits
+                                        label_ids = torch.tensor(data['label']).numpy()
+                                        # total_eval_accuracy += flat_accuracy(logits, label_ids)
+                                        eval_loss += loss.item()
+                                        onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                                        labels = np.concatenate([labels, data['label'].numpy()])
+                                        predictions = np.concatenate([predictions, onehot])
+                                        tepoch.set_description(f"Evaluation {epoch}")
+                                        tepoch.set_postfix(Loss=loss.item())
+                            # avg_val_accuracy = total_eval_accuracy / len(self.test_loader)
+                            # avg_val_loss = eval_loss / len(self.test_loader)
 
-                        self.data_loader.eval(labels, predictions)
+                            self.data_loader.eval(labels, predictions)
                         self.final("{}-{}".format(epoch, i))
                         self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output", "checkpoint-{}-{}".format(epoch, i)))
 
@@ -165,32 +167,33 @@ class DebertaV2XLarge:
 
             # Evaluation
             self.model.eval()
-            labels = np.array([])
-            predictions = np.array([])
-            eval_loss = 0
-            # total_eval_accuracy = 0
-            with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
-                for i, data in enumerate(tepoch):
-                    with torch.no_grad():
-                        result = self.model(torch.stack(data['input_ids']).T.cuda(),
-                                            token_type_ids=None,
-                                            attention_mask=torch.stack(data['attention_mask']).T.cuda(),
-                                            labels=torch.tensor(data['label']).cuda(),
-                                            return_dict=True)
-                        loss = result.loss
-                        logits = result.logits
-                        label_ids = torch.tensor(data['label']).numpy()
-                        # total_eval_accuracy += flat_accuracy(logits, label_ids)
-                        eval_loss += loss.item()
-                        onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
-                        labels = np.concatenate([labels, data['label'].numpy()])
-                        predictions = np.concatenate([predictions, onehot])
-                        tepoch.set_description(f"Evaluation {epoch}")
-                        tepoch.set_postfix(Loss=loss.item())
-            # avg_val_accuracy = total_eval_accuracy / len(self.test_loader)
-            # avg_val_loss = eval_loss / len(self.test_loader)
+            if skip_eval:
+                labels = np.array([])
+                predictions = np.array([])
+                eval_loss = 0
+                # total_eval_accuracy = 0
+                with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
+                    for i, data in enumerate(tepoch):
+                        with torch.no_grad():
+                            result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                                token_type_ids=None,
+                                                attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                                labels=torch.tensor(data['label']).cuda(),
+                                                return_dict=True)
+                            loss = result.loss
+                            logits = result.logits
+                            label_ids = torch.tensor(data['label']).numpy()
+                            # total_eval_accuracy += flat_accuracy(logits, label_ids)
+                            eval_loss += loss.item()
+                            onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                            labels = np.concatenate([labels, data['label'].numpy()])
+                            predictions = np.concatenate([predictions, onehot])
+                            tepoch.set_description(f"Evaluation {epoch}")
+                            tepoch.set_postfix(Loss=loss.item())
+                # avg_val_accuracy = total_eval_accuracy / len(self.test_loader)
+                # avg_val_loss = eval_loss / len(self.test_loader)
 
-            self.data_loader.eval(labels, predictions)
+                self.data_loader.eval(labels, predictions)
             self.final(epoch)
             self.model.save_pretrained(os.path.join(self.data_loader.storage_folder, "output", "checkpoint-{}".format(epoch)))
 
