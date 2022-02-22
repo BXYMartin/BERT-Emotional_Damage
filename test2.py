@@ -126,6 +126,20 @@ class DebertaLargeTestCase(unittest.TestCase):
         data_loader.augmentation_all()
         self.assertEqual(True, True)
 
+
+    def test_train_cleaned(self):
+        data_loader = OfficialLoader("Official-DebertaLarge-Cleaned-Test-Case")
+        data_loader.split_upsample_cleaned()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaLarge(data_loader)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+
+
     def test_train(self):
         data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
         data_loader.split_upsample()
