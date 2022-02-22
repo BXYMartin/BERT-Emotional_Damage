@@ -22,7 +22,7 @@ def flat_accuracy(preds, labels):
 class DebertaV2XLarge:
     train_epochs = 3
     eval_while_training = True
-    eval_step_size = 500
+    eval_step_size = 700
     batch_size = 3
     skip_eval = True
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
@@ -133,7 +133,7 @@ class DebertaV2XLarge:
 
                         # Evaluation
                         self.model.eval()
-                        if self.skip_eval:
+                        if not self.skip_eval:
                             labels = np.array([])
                             predictions = np.array([])
                             eval_loss = 0
@@ -167,7 +167,7 @@ class DebertaV2XLarge:
 
             # Evaluation
             self.model.eval()
-            if self.skip_eval:
+            if not self.skip_eval:
                 labels = np.array([])
                 predictions = np.array([])
                 eval_loss = 0

@@ -1,9 +1,9 @@
 import unittest
 import os
 
-os.environ['PIP_CACHE_DIR'] = "/vol/bitbucket/ya321/.cache"
-os.environ['TRANSFORMERS_CACHE'] = "/vol/bitbucket/ya321/.cache"
-os.environ['HF_DATASETS_CACHE'] = "/vol/bitbucket/ya321/.cache"
+os.environ['PIP_CACHE_DIR'] = "/vol/bitbucket/mb220/.cache"
+os.environ['TRANSFORMERS_CACHE'] = "/vol/bitbucket/mb220/.cache"
+os.environ['HF_DATASETS_CACHE'] = "/vol/bitbucket/mb220/.cache"
 os.environ["WANDB_DISABLED"] = "true"
 from loader.official import OfficialLoader
 from model.DebertaBase import DebertaBase
