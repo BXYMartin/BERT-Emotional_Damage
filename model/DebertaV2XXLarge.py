@@ -22,8 +22,8 @@ def flat_accuracy(preds, labels):
 class DebertaV2XXLarge:
     train_epochs = 3
     eval_while_training = True
-    eval_step_size = 500
-    batch_size = 3
+    eval_step_size = 1200
+    batch_size = 2
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xxlarge")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
@@ -81,7 +81,7 @@ class DebertaV2XXLarge:
 
     @staticmethod
     def tokenize_function(examples):
-        return DebertaV2XLarge.tokenizer(examples['text'],
+        return DebertaV2XXLarge.tokenizer(examples['text'],
                                               add_special_tokens=True,
                                               padding='max_length',
                                               max_length=512,
@@ -127,7 +127,7 @@ class DebertaV2XXLarge:
                     if i % 5 == 0:
                         tepoch.set_description(f"Epoch {epoch}")
                         tepoch.set_postfix(Loss=loss.item())
-                    if i % self.eval_step_size == 0 and epoch >= 1:
+                    if i % self.eval_step_size == 0 and epoch >= 0 and i != 0:
                         # Performing eval in the middle of training
 
                         # Evaluation
