@@ -133,7 +133,7 @@ class DebertaV2XLarge:
 
                         # Evaluation
                         self.model.eval()
-                        if skip_eval:
+                        if self.skip_eval:
                             labels = np.array([])
                             predictions = np.array([])
                             eval_loss = 0
@@ -167,7 +167,7 @@ class DebertaV2XLarge:
 
             # Evaluation
             self.model.eval()
-            if skip_eval:
+            if self.skip_eval:
                 labels = np.array([])
                 predictions = np.array([])
                 eval_loss = 0
