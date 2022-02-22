@@ -23,6 +23,7 @@ class OfficialLoader(BaseLoader):
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
     official_train_data_filename = "official_split_train_dataset_AAA.csv"
     official_train_data_all_filename = "official_split_train_dataset_AAA_all.csv"
+    official_train_data_all_cleaned_filename = "official_split_train_dataset_AAA_all_cleaned.csv"
     official_train_data_truncation_filename = "official_split_train_dataset_AAA_truncation.csv"
     official_test_data_filename = "official_split_test_dataset.csv"
     official_test_data_truncation_filename = "official_split_test_dataset_truncation.csv"
@@ -212,6 +213,15 @@ class OfficialLoader(BaseLoader):
         self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_filename))
         self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_filename))
         logging.info(f"Successfully split TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+
+        
+    def split_upsample_all_cleaned(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename)):
+            logging.info(f"Using cached official split files: {self.official_train_data_all_filename}")
+            self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename))
+            return
+        raise NotImplementedError("Upsample Cleaned Dataset not found.")
+
 
     def split_upsample_all(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_filename)):

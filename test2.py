@@ -181,6 +181,22 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
         self.assertEqual(True, True)
 
 
+
+    def test_train_all_cleaned(self):
+        data_loader = OfficialLoader("Official-DebertaV2XLarge-All-Cleaned-Test-Case")
+        data_loader.split_upsample()
+        data_loader.split_upsample_all_cleaned()
+        # data_loader.augmentation()
+        # data_loader.augmentation_all()
+        model = DebertaV2XLarge(data_loader, skip_eval=True)
+        print(f'train_start, model.train_epochs = {model.train_epochs}, model.batch_size = {model.batch_size}')
+        model.train()
+        self.assertEqual(True, True)
+        pass
+
+
+
+
     def test_train_all(self):
         data_loader = OfficialLoader("Official-DebertaV2XLarge-All-Test-Case")
         data_loader.split_upsample()
