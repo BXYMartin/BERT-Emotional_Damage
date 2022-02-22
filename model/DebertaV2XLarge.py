@@ -27,8 +27,11 @@ class DebertaV2XLarge:
     skip_eval = True
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
 
-    def __init__(self, loader: BaseLoader, load_existing=False):
+    def __init__(self, loader: BaseLoader, load_existing=False, skip_eval=False):
         self.data_loader = loader
+        self.skip_eval = skip_eval
+        if self.skip_eval:
+            print("Skipping eval phase.")
         model_name = "microsoft/deberta-v2-xlarge"
         local_files_only = False
         if load_existing:
