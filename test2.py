@@ -19,6 +19,15 @@ class DebertaBaseTestCase(unittest.TestCase):
         data_loader.split_upsample()
         self.assertEqual(True, True)
 
+    def test_split_upsample_cleaned_synonym(self):
+        data_loader = OfficialLoader()
+        data_loader.split_upsample_cleaned_synonym()
+        self.assertEqual(True, True)
+
+    def test_process_unnamed(self):
+        data_loader = OfficialLoader()
+        data_loader.process_unnamed(data_loader.official_train_data_cleaned_synonym_all_filename)
+
     def test_split_upsample_all(self):
         data_loader = OfficialLoader()
         data_loader.split_upsample_all()
@@ -126,7 +135,6 @@ class DebertaLargeTestCase(unittest.TestCase):
         data_loader.augmentation_all()
         self.assertEqual(True, True)
 
-
     def test_train_cleaned(self):
         data_loader = OfficialLoader("Official-DebertaLarge-Cleaned-Test-Case")
         data_loader.split_upsample_cleaned()
@@ -137,8 +145,6 @@ class DebertaLargeTestCase(unittest.TestCase):
         model.train()
         self.assertEqual(True, True)
         pass
-
-
 
     def test_train(self):
         data_loader = OfficialLoader("Official-DebertaLarge-Test-Case")
@@ -194,8 +200,6 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
         data_loader.split_upsample()
         self.assertEqual(True, True)
 
-
-
     def test_train_all_cleaned(self):
         data_loader = OfficialLoader("Official-DebertaV2XLarge-All-Cleaned-Test-Case")
         data_loader.split_upsample()
@@ -208,9 +212,6 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
         self.assertEqual(True, True)
         pass
 
-
-
-
     def test_train_all(self):
         data_loader = OfficialLoader("Official-DebertaV2XLarge-All-Test-Case")
         data_loader.split_upsample()
@@ -222,8 +223,6 @@ class DebertaV2XLargeTestCase(unittest.TestCase):
         model.train()
         self.assertEqual(True, True)
         pass
-
-
 
     def test_augment_all(self):
         data_loader = OfficialLoader()

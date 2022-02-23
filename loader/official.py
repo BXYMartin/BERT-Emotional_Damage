@@ -2,6 +2,8 @@
 import sys
 import os
 import os.path
+
+import torch
 from sklearn.metrics import precision_score, recall_score, f1_score, classification_report, confusion_matrix
 import numpy as np
 import logging
@@ -13,6 +15,11 @@ from datetime import datetime
 from imblearn.over_sampling import RandomOverSampler
 from collections import Counter
 from loader.dont_patronize_me import DontPatronizeMe
+from collections import OrderedDict
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import wordnet
+import tqdm
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.INFO)
@@ -23,6 +30,8 @@ class OfficialLoader(BaseLoader):
     augmentation_data_filename = "back_translation_balanced_dataset.csv"
     official_train_data_filename = "official_split_train_dataset_AAA.csv"
     official_train_data_cleaned_filename = "official_split_train_dataset_AAA_cleaned.csv"
+    official_train_data_cleaned_synonym_filename = "official_split_train_dataset_AAA_cleaned_synonym.csv"
+    official_train_data_cleaned_synonym_all_filename = "official_split_train_dataset_AAA_all_cleaned_synonym.csv"
     official_train_data_all_filename = "official_split_train_dataset_AAA_all.csv"
     official_train_data_all_cleaned_filename = "official_split_train_dataset_AAA_all_cleaned.csv"
     official_train_data_truncation_filename = "official_split_train_dataset_AAA_truncation.csv"
@@ -137,9 +146,11 @@ class OfficialLoader(BaseLoader):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_truncation_filename)) and os.path.isfile(
                 os.path.join(self.data_dir, self.official_test_data_filename)):
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_truncation_filename))
-            logging.info(f"[split_upsample_truncation] Using cached train_data: {self.official_train_data_truncation_filename}")
+            logging.info(
+                f"[split_upsample_truncation] Using cached train_data: {self.official_train_data_truncation_filename}")
             self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_truncation_filename))
-            logging.info(f"[split_upsample_truncation] Using cached test_data: {self.official_test_data_truncation_filename}")
+            logging.info(
+                f"[split_upsample_truncation] Using cached test_data: {self.official_test_data_truncation_filename}")
             self.final_data = pd.DataFrame(
                 pd.read_csv(os.path.join(self.data_dir, self.official_final_data_truncation_filename)))
             logging.info(
@@ -159,6 +170,73 @@ class OfficialLoader(BaseLoader):
             print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             return
         raise NotImplementedError("Upsample Train Dataset not found.")
+
+    def split_upsample_cleaned_synonym(self):
+        if os.path.isfile(
+                os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename)) and os.path.isfile(
+            os.path.join(self.data_dir, self.official_test_data_cleaned_filename)):
+            logging.info(f"Using cached official split files.")
+            self.train_data = pd.read_csv(
+                os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename))
+            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_cleaned_filename))
+            logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
+            return
+
+        def find_synonyms(word):
+            synonyms = []
+            for synset in wordnet.synsets(word):
+                for syn in synset.lemma_names():
+                    synonyms.append(syn)
+
+            # using this to drop duplicates while maintaining word order (closest synonyms comes first)
+            synonyms_without_duplicates = list(OrderedDict.fromkeys(synonyms))
+            return synonyms_without_duplicates
+
+        def create_set_of_new_sentences(sentence, max_syn_per_word=1, ratio=0.2):
+            new_sentences = []
+            word_tokens = word_tokenize(sentence)
+            replace_size = min(20, int(ratio * len(word_tokens)))
+            replace_indices = np.random.choice(len(word_tokens), size=replace_size, replace=False)
+            for i in range(max_syn_per_word):
+                new_sentence = sentence
+                for index in replace_indices:
+                    word = word_tokens[index]
+                    if len(word) <= 3:
+                        continue
+                    synonyms = find_synonyms(word)[0:max_syn_per_word]
+                    if i >= len(synonyms):
+                        continue
+                    synonym = synonyms[i].replace('_', ' ')  # restore space character
+                    new_sentence = new_sentence.replace(word, synonym)
+                if sentence != new_sentence:
+                    new_sentences.append(new_sentence)
+            return new_sentences
+
+        def data_augment_synonym_replacement(data, column='subject'):
+            generated_data = pd.DataFrame([], columns=data.columns)
+            with tqdm.tqdm(data.index) as tepoch:
+                for i, index in enumerate(tepoch):
+                    # print(f'[data_augment_synonym_replacement] {index}/{len(data.index)}')
+                    text_to_augment = data[column][index]
+                    for generated_sentence in create_set_of_new_sentences(text_to_augment):
+                        new_entry = data.loc[[index]]
+                        new_entry[column] = generated_sentence
+                        generated_data = generated_data.append(new_entry)
+            generated_data_df = generated_data.drop_duplicates()
+            augmented_data = pd.concat([data.loc[:], generated_data_df], ignore_index=True)
+            return augmented_data
+
+        nltk.download('wordnet')
+        nltk.download('punkt')
+        self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename))
+        logging.info(
+            f"Performing split_upsample_cleaned_synonym using {self.official_train_data_all_cleaned_filename}.")
+        aug_data = data_augment_synonym_replacement(self.train_data, column='text')
+        print(f"original data.head = \n{self.train_data.head()}")
+        print(f"aug data.head = \n{aug_data.head()}")
+        self.train_data = aug_data
+        self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename))
 
     def split_upsample(self):
         if os.path.isfile(os.path.join(self.data_dir, self.all_data_filename)) and os.path.isfile(
@@ -227,14 +305,12 @@ class OfficialLoader(BaseLoader):
         self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_filename))
         logging.info(f"Successfully split TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
 
-        
     def split_upsample_all_cleaned(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename)):
             logging.info(f"Using cached official split files: {self.official_train_data_all_filename}")
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename))
             return
         raise NotImplementedError("Upsample Cleaned Dataset not found.")
-
 
     def split_upsample_all(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_filename)):
@@ -332,6 +408,24 @@ class OfficialLoader(BaseLoader):
         self.train_data = pd.concat([positive_class, negative_class])
         self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
         self.train_data = self.train_data.sample(frac=1, axis=1).reset_index(drop=True)
+
+    def process_unnamed(self, input_name):
+        if os.path.isfile(os.path.join(self.data_dir, input_name)):
+            logging.info(
+                f"[process] input from {os.path.join(self.data_dir, input_name)}")
+            if input_name[-3:] == 'tsv':
+                self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name), sep='\t',
+                                              names=['par_id', 'art_id', 'keyword', 'country', 'text'])
+            else:
+                self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name))
+            print((self.train_data.head()))
+            if 'Unnamed: 0' in self.train_data.columns:
+                self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
+            if 'Unnamed: 0.1' in self.train_data.columns:
+                self.train_data = self.train_data.drop(columns=['Unnamed: 0.1'])
+            print((self.train_data.head()))
+            print(f'shape = {self.train_data.shape}')
+            self.train_data.to_csv(os.path.join(self.data_dir, input_name))
 
     def process(self, input_name, output_name):
         if os.path.isfile(os.path.join(self.data_dir, output_name)):
