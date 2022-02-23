@@ -16,9 +16,13 @@ logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(leve
 class BaseLoader:
     base_dir = "runtime"
     data_dir = "data"
+    prob_dir = "prob"
+    final_prob_dir = "final_prob"
     name = "Base"
     score_filename = "score.txt"
     final_filename = "task1.txt"
+    prob_filename = "probs.txt"
+    label_filename = "labels.txt"
     train_split_filename = "train_semeval_parids-labels.csv"
     dev_split_filename = "dev_semeval_parids-labels.csv"
     all_data_filename = "dontpatronizeme_pcl.tsv"
@@ -62,6 +66,26 @@ class BaseLoader:
         logging.debug(f"Final evaluation data header:")
         logging.debug(self.final_data.head())
 
+    def final_prob(self, probs):
+        prob_file_dir = os.path.join(self.storage_folder, self.final_prob_dir)
+        if not os.path.exists(prob_file_dir):
+            os.mkdir(prob_file_dir)
+        else:
+            logging.warning(f"Directory {prob_file_dir} already exists!")
+        prob_file_path = os.path.join(self.storage_folder, self.final_prob_dir, self.prob_filename)
+        np.savetxt(prob_file_path, probs)
+        logging.info(f"Final probabilities files written to {prob_file_dir}.")
+
+    def final_convert(self, threshold=0.9):
+        final_prob_file_dir = os.path.join(self.storage_folder, self.final_prob_dir, self.prob_filename)
+        probs = np.loadtxt(final_prob_file_dir)
+        prediction = np.zeros((probs.shape[0],))
+        for index in range(probs.shape[0]):
+            if probs[index, 1] > threshold:
+                prediction[index] = 1
+        self.final(prediction, epoch_num='{}_{}'.format(999, threshold))
+
+
     def final(self, labels, epoch_num=''):
         file_path = os.path.join(self.res_dir, self.final_filename)
         file_path += f'_{epoch_num}'
@@ -69,6 +93,18 @@ class BaseLoader:
             for label in labels:
                 final_file.write(str(int(label)) + "\n")
         logging.critical(f"Final result written to {file_path}")
+
+    def prob(self, labels, probs):
+        prob_file_dir = os.path.join(self.storage_folder, self.prob_dir)
+        if not os.path.exists(prob_file_dir):
+            os.mkdir(prob_file_dir)
+        else:
+            logging.warning(f"Directory {prob_file_dir} already exists!")
+        prob_file_path = os.path.join(self.storage_folder, self.prob_dir, self.prob_filename)
+        label_file_path = os.path.join(self.storage_folder, self.prob_dir, self.label_filename)
+        np.savetxt(label_file_path, labels)
+        np.savetxt(prob_file_path, probs)
+        logging.info(f"Labels and probabilities files written to {prob_file_dir}.")
 
     def eval(self, labels, predictions):
         task_confusion_matrix = confusion_matrix(labels, predictions)

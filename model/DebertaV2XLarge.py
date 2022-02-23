@@ -22,13 +22,14 @@ def flat_accuracy(preds, labels):
 class DebertaV2XLarge:
     train_epochs = 3
     eval_while_training = True
-    eval_step_size = 700
     batch_size = 3
+    eval_step_size = 700
     skip_eval = True
     tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v2-xlarge")
 
-    def __init__(self, loader: BaseLoader, load_existing=False, skip_eval=False):
+    def __init__(self, loader: BaseLoader, load_existing=False, skip_eval=False, save_prob=False, half_precision=True):
         self.data_loader = loader
+        self.save_prob = save_prob
         self.skip_eval = skip_eval
         if self.skip_eval:
             print("Skipping eval phase.")
@@ -45,7 +46,8 @@ class DebertaV2XLarge:
             cache_dir="/vol/bitbucket/ya321/.cache",
             local_files_only=local_files_only
         )
-        self.model.half()
+        if half_precision:
+            self.model.half()
         self.model.cuda()
 
         # def get_parameters(model, model_init_lr, multiplier, classifier_lr):
@@ -210,6 +212,8 @@ class DebertaV2XLarge:
         labels = np.array([])
         predictions = np.array([])
         eval_loss = 0
+        if self.save_prob:
+            probs = None
         with tqdm.tqdm(self.test_loader, unit="batch") as tepoch:
             for i, data in enumerate(tepoch):
                 with torch.no_grad():
@@ -221,12 +225,16 @@ class DebertaV2XLarge:
                     loss = result.loss
                     logits = result.logits
                     eval_loss += loss.item()
+                    if self.save_prob:
+                        probs = logits.detach().cpu().numpy() if probs is None else np.vstack([probs, logits.detach().cpu().numpy()])
                     onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
                     labels = np.concatenate([labels, data['label'].numpy()])
                     predictions = np.concatenate([predictions, onehot])
                     tepoch.set_description(f"Prediction")
                     tepoch.set_postfix(Loss=loss.item())
         self.data_loader.eval(labels, predictions)
+        if self.save_prob:
+            self.data_loader.prob(labels, probs)
 
     def final(self, epoch_num=''):
         self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
@@ -236,6 +244,8 @@ class DebertaV2XLarge:
                                        batch_size=self.batch_size)
         self.model.eval()
         predictions = np.array([])
+        if self.save_prob:
+            probs = None
         with tqdm.tqdm(self.final_loader, unit="batch") as tepoch:
             for i, data in enumerate(tepoch):
                 with torch.no_grad():
@@ -245,10 +255,49 @@ class DebertaV2XLarge:
                                         return_dict=True)
                     loss = result.loss
                     logits = result.logits
+                    if self.save_prob:
+                        probs = logits.detach().cpu().numpy() if probs is None else np.vstack([probs, logits.detach().cpu().numpy()])
                     onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
                     predictions = np.concatenate([predictions, onehot])
                     tepoch.set_description(f"Final")
                     tepoch.set_postfix(Loss=loss)
         self.prediction = predictions
         self.data_loader.final(predictions, epoch_num)
+        if self.save_prob:
+            self.data_loader.final_prob(probs)
+ 
+    def final_with_threshold(self, epoch_num='', threshold=0.90056336):
+        self.final_dataset = Dataset.from_pandas(pd.DataFrame(self.data_loader.final_data))
+        self.encoded_final_dataset = self.final_dataset.map(self.tokenize_function, batched=True)
+        self.final_loader = DataLoader(self.encoded_final_dataset,
+                                       sampler=SequentialSampler(self.encoded_final_dataset),
+                                       batch_size=self.batch_size)
+        self.model.eval()
+        predictions = np.array([])
+        if self.save_prob:
+            probs = None
+        with tqdm.tqdm(self.final_loader, unit="batch") as tepoch:
+            for i, data in enumerate(tepoch):
+                with torch.no_grad():
+                    result = self.model(torch.stack(data['input_ids']).T.cuda(),
+                                        token_type_ids=None,
+                                        attention_mask=torch.stack(data['attention_mask']).T.cuda(),
+                                        return_dict=True)
+                    loss = result.loss
+                    logits = result.logits
+                    if self.save_prob:
+                        probs = logits.detach().cpu().numpy() if probs is None else np.vstack([probs, logits.detach().cpu().numpy()])
+
+                    prediction = np.zeros((logits.shape[0], ))
+                    for index in range(prediction.shape[0]):
+                        if logits[index, 1] > threshold:
+                            prediction[index] = 1
+                    # onehot = np.argmax(logits.detach().cpu().numpy(), axis=-1)
+                    predictions = np.concatenate([predictions, prediction])
+                    tepoch.set_description(f"Final")
+                    tepoch.set_postfix(Loss=loss)
+        self.prediction = predictions
+        self.data_loader.final(predictions, epoch_num)
         print(predictions)
+        if self.save_prob:
+            self.data_loader.final_prob(probs)
