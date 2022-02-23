@@ -171,13 +171,17 @@ class OfficialLoader(BaseLoader):
             return
         raise NotImplementedError("Upsample Train Dataset not found.")
 
-    def split_upsample_cleaned_synonym(self):
+    def split_upsample_cleaned_synonym(self, use_all=True):
+        if use_all:
+            file_name = self.official_train_data_cleaned_synonym_all_filename
+        else:
+            file_name = self.official_train_data_cleaned_synonym_filename
         if os.path.isfile(
-                os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename)) and os.path.isfile(
+                os.path.join(self.data_dir, file_name)) and os.path.isfile(
             os.path.join(self.data_dir, self.official_test_data_cleaned_filename)):
             logging.info(f"Using cached official split files.")
             self.train_data = pd.read_csv(
-                os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename))
+                os.path.join(self.data_dir, file_name))
             self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_cleaned_filename))
             logging.info(f"Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             print(f"[split_AAA] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
@@ -229,14 +233,18 @@ class OfficialLoader(BaseLoader):
 
         nltk.download('wordnet')
         nltk.download('punkt')
-        self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename))
+        if use_all:
+            origin_file_name = self.official_train_data_all_cleaned_filename
+        else:
+            origin_file_name = self.official_train_data_cleaned_filename
+        self.train_data = pd.read_csv(os.path.join(self.data_dir, origin_file_name))
         logging.info(
-            f"Performing split_upsample_cleaned_synonym using {self.official_train_data_all_cleaned_filename}.")
+            f"Performing split_upsample_cleaned_synonym using {origin_file_name}.")
         aug_data = data_augment_synonym_replacement(self.train_data, column='text')
         print(f"original data.head = \n{self.train_data.head()}")
         print(f"aug data.head = \n{aug_data.head()}")
         self.train_data = aug_data
-        self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_cleaned_synonym_all_filename))
+        self.train_data.to_csv(os.path.join(self.data_dir, file_name))
 
     def split_upsample(self):
         if os.path.isfile(os.path.join(self.data_dir, self.all_data_filename)) and os.path.isfile(
