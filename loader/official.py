@@ -197,10 +197,11 @@ class OfficialLoader(BaseLoader):
             synonyms_without_duplicates = list(OrderedDict.fromkeys(synonyms))
             return synonyms_without_duplicates
 
-        def create_set_of_new_sentences(sentence, max_syn_per_word=1, ratio=0.2):
+        def create_set_of_new_sentences(sentence, max_syn_per_word=1, ratio=0.4):
             new_sentences = []
             word_tokens = word_tokenize(sentence)
-            replace_size = min(20, int(ratio * len(word_tokens)))
+            replace_size = min(50, int(ratio * len(word_tokens)))
+            # replace_size = max(3, replace_size)
             replace_indices = np.random.choice(len(word_tokens), size=replace_size, replace=False)
             for i in range(max_syn_per_word):
                 new_sentence = sentence

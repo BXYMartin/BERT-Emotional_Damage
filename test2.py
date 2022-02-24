@@ -22,7 +22,8 @@ class DebertaBaseTestCase(unittest.TestCase):
 
     def test_split_upsample_cleaned_synonym(self):
         data_loader = OfficialLoader()
-        data_loader.split_upsample_cleaned_synonym()
+        data_loader.split_upsample_cleaned_synonym(use_all=False)
+        data_loader.process_unnamed(data_loader.official_train_data_cleaned_synonym_filename)
         self.assertEqual(True, True)
 
     def test_process_unnamed(self):
