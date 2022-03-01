@@ -58,8 +58,10 @@ class BaseLoader:
         task = DontPatronizeMe(os.path.join(self.data_dir), os.path.join(self.data_dir, self.test_data_filename))
         task.load_task1()
         task.load_test()
+        task.load_task2(return_one_hot=False)
         self.all_data = task.train_task1_df
         self.final_data = task.test_set_df
+        self.all_categorical_data = task.train_task2_df
 
         logging.debug(f"All data header:")
         logging.debug(self.all_data.head())
@@ -84,7 +86,6 @@ class BaseLoader:
             if probs[index, 1] > threshold:
                 prediction[index] = 1
         self.final(prediction, epoch_num='{}_{}'.format(999, threshold))
-
 
     def final(self, labels, epoch_num=''):
         file_path = os.path.join(self.res_dir, self.final_filename)
@@ -118,6 +119,29 @@ class BaseLoader:
             score_file.write('task1_recall:' + str(task_recall) + '\n')
             score_file.write('task1_f1:' + str(task_f1) + '\n')
 
+        logging.info(f"Confusion matrix")
+        logging.info(task_confusion_matrix)
+        logging.info(f"Precision score")
+        logging.info(task_precision)
+        logging.info(f"Recall score")
+        logging.info(task_recall)
+        logging.info(f"F1 score")
+        logging.info(task_f1)
+        logging.info(f"Score file written to {file_path}")
+
+    def eval_per(self, labels, predictions, class_name, class_value):
+        task_confusion_matrix = confusion_matrix(labels, predictions)
+        task_precision = precision_score(labels, predictions)
+        task_recall = recall_score(labels, predictions)
+        task_f1 = f1_score(labels, predictions)
+        filename = "score" + f'{class_name}_{class_value}.txt'
+        file_path = os.path.join(self.storage_folder, filename)
+        with open(file_path, "w") as score_file:
+            score_file.write('task1_precision:' + str(task_precision) + '\n')
+            score_file.write('task1_recall:' + str(task_recall) + '\n')
+            score_file.write('task1_f1:' + str(task_f1) + '\n')
+
+        logging.info(f'{class_name}_{class_value} result:')
         logging.info(f"Confusion matrix")
         logging.info(task_confusion_matrix)
         logging.info(f"Precision score")

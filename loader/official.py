@@ -40,6 +40,8 @@ class OfficialLoader(BaseLoader):
     official_test_data_truncation_filename = "official_split_test_dataset_truncation.csv"
     augmentation_data_all_filename = "back_translation_balanced_dataset_all.csv"
     official_final_data_truncation_filename = "official_final_dataset_truncation.csv"
+    official_train_data_five_labels = "official_split_train_dataset_five_labels.csv"
+    official_test_data_five_labels = "official_split_test_dataset_five_labels.csv"
 
     def __init__(self, token=""):
         super().__init__(token)
@@ -503,3 +505,54 @@ class OfficialLoader(BaseLoader):
         #     self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
         #     print((self.train_data.head()))
         #     self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
+
+    def generate_data_original_labels(self):
+        if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_five_labels)) and os.path.isfile(
+                os.path.join(self.data_dir, self.official_test_data_five_labels)):
+            logging.info(f"{self.official_train_data_five_labels} exists")
+            return
+        logging.info(f"Performing generate_train_data_original_labels.")
+        train_ids = pd.read_csv(os.path.join(self.data_dir, self.train_split_filename))
+        train_ids.par_id = train_ids.par_id.astype(str)
+        dev_ids = pd.read_csv(os.path.join(self.data_dir, self.dev_split_filename))
+        dev_ids.par_id = dev_ids.par_id.astype(str)
+        self.train_data = []  # par_id, label and text
+        for idx in range(len(train_ids)):
+            par_id = train_ids.par_id[idx]
+            text = self.all_data.loc[self.all_data.par_id == par_id].text.values[0]
+            binary_label = self.all_data.loc[self.all_data.par_id == par_id].label.values[0]
+            orig_label = self.all_data.loc[self.all_data.par_id == par_id].orig_label.values[0]
+            category = -1 if par_id not in self.all_categorical_data.par_id.values else \
+                self.all_categorical_data.loc[self.all_categorical_data.par_id == par_id].label.values[0]
+            self.train_data.append({
+                'par_id': par_id,
+                'text': text,
+                'binary_label': binary_label,
+                'orig_label': orig_label,
+                'category': category
+
+            })
+        self.train_data = pd.DataFrame(self.train_data)
+
+        self.test_data = []  # par_id, label and text
+        for idx in range(len(dev_ids)):
+            par_id = dev_ids.par_id[idx]
+            text = self.all_data.loc[self.all_data.par_id == par_id].text.values[0]
+            if len(text) < 1:
+                continue
+            binary_label = self.all_data.loc[self.all_data.par_id == par_id].label.values[0]
+            orig_label = self.all_data.loc[self.all_data.par_id == par_id].orig_label.values[0]
+            category = -1 if par_id not in self.all_categorical_data.par_id.values else \
+                self.all_categorical_data.loc[self.all_categorical_data.par_id == par_id].label.values[0]
+            self.test_data.append({
+                'par_id': par_id,
+                'text': text,
+                'binary_label': binary_label,
+                'orig_label': orig_label,
+                'category': category
+            })
+        self.test_data = pd.DataFrame(self.test_data)
+        self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_five_labels))
+        self.train_data.to_csv(os.path.join(self.data_dir, self.official_train_data_five_labels))
+        logging.info(
+            f"Successfully generate Train:{self.official_train_data_five_labels}\tTest:{self.official_test_data_five_labels}).")
