@@ -140,6 +140,7 @@ class BaseLoader:
             score_file.write('task1_precision:' + str(task_precision) + '\n')
             score_file.write('task1_recall:' + str(task_recall) + '\n')
             score_file.write('task1_f1:' + str(task_f1) + '\n')
+            score_file.write(f'{class_name}_{class_value} total_samples:' + str(len(labels)) + '\n')
 
         logging.info(f'{class_name}_{class_value} result:')
         logging.info(f"Confusion matrix")

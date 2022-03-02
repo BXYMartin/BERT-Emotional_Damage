@@ -6,17 +6,15 @@ import ast
 import numpy as np
 import pandas as pd
 import logging
-from spec.task import DontPatronizeMe
-from datetime import datetime
 from loader.official import OfficialLoader
-from spec.task import DontPatronizeMe
-from datasets import Dataset, load_metric
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 import torch
 import torch.nn as nn
 import os
 import tqdm
 import matplotlib.pyplot as plt
+
+# TODO:1. 对于训练数据生成不同level的统计数据
+# TODO:2. 对于keyword和country code 进行分类统计
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.INFO)
@@ -161,5 +159,63 @@ class DataAnalyseTestCase(unittest.TestCase):
                     category_dict[c][1].append(int(data['predicted_label']))
             for key, data in category_dict.items():
                 loader.eval_per(np.array(data[0]), np.array(data[1]), 'category', key)
+        else:
+            print(f'{os.path.join(loader.data_dir, loader.official_test_data_five_labels)} doesn\'t exists')
+
+    def test_analyze_per_country_keyword(self):
+        loader = OfficialLoader('AnalysisPerCountryKeyword')
+        if os.path.isfile(os.path.join(loader.data_dir, loader.official_test_data_five_labels)):
+            test_data_all_labels = pd.read_csv(os.path.join(loader.data_dir, loader.official_test_data_five_labels),
+                                               usecols=['par_id', 'text', 'binary_label',
+                                                        'keyword', 'country'])
+            predicted_probs_path = os.path.join(loader.prob_dir,
+                                                loader.prob_filename)
+            predict_probs = np.loadtxt(predicted_probs_path)
+            predict_labels = get_predicted_labels(predict_probs)
+            test_data_all_labels.loc[:, 'predicted_label'] = predict_labels[:]
+            country_dict = {i: [[], []] for i in test_data_all_labels['country'].unique()}
+            keyword_dict = {i: [[], []] for i in test_data_all_labels['keyword'].unique()}
+            for i, data in tqdm.tqdm(test_data_all_labels.iterrows(), total=test_data_all_labels.shape[0]):
+                country_dict[data['country']][0].append(int(data['binary_label']))
+                country_dict[data['country']][1].append(int(data['predicted_label']))
+                keyword_dict[data['keyword']][0].append(int(data['binary_label']))
+                keyword_dict[data['keyword']][1].append(int(data['predicted_label']))
+            for key, data in country_dict.items():
+                loader.eval_per(np.array(data[0]), np.array(data[1]), 'country', key)
+            for key, data in keyword_dict.items():
+                loader.eval_per(np.array(data[0]), np.array(data[1]), 'keyword', key)
+        else:
+            print(f'{os.path.join(loader.data_dir, loader.official_test_data_five_labels)} doesn\'t exists')
+
+    def test_analyze_train_data_per_level(self):
+        loader = OfficialLoader('AnalysisTrainPerLevel')
+        if os.path.isfile(os.path.join(loader.data_dir, loader.official_train_data_five_labels)):
+            train_data_all_labels = pd.read_csv(os.path.join(loader.data_dir, loader.official_train_data_five_labels),
+                                                usecols=['par_id', 'text', 'binary_label', 'orig_label', 'category'])
+            level_dict = {i: [[], []] for i in range(5)}
+            level_category_count = {i: [0 for j in range(7)] for i in [2, 3, 4]}
+            for i, data in tqdm.tqdm(train_data_all_labels.iterrows(), total=train_data_all_labels.shape[0]):
+                # print(data)
+                level_dict[data['orig_label']][0].append(int(data['binary_label']))
+                cate = ast.literal_eval(data['category'])
+                if isinstance(cate, int):
+                    if cate == -1:
+                        continue
+                    cate = [cate]
+                level_category_count[data['orig_label']][len(cate) - 1] += 1
+            # print(level_dict)
+            for key, val in level_category_count.items():
+                total_label_num = 0
+                for num, count in enumerate(val):
+                    total_label_num += (num + 1) * count
+                print(f'level{key}, val = {val}\tcategory_count_avg = {total_label_num / np.sum(val)}')
+                plt.cla()
+                plt.bar(range(1, 8), val)
+                plt.title(f'level{key} label_count')
+                plt_path = './prob/analysis_train_plot/'
+                if not os.path.exists(plt_path):
+                    os.makedirs(plt_path)
+                plt.savefig(plt_path + f'level{key}_label_count')
+
         else:
             print(f'{os.path.join(loader.data_dir, loader.official_test_data_five_labels)} doesn\'t exists')

@@ -1,6 +1,7 @@
 .DS_Store
 .idea/
 runtime/
+test-output.xml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

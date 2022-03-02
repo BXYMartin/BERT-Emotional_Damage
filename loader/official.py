@@ -161,6 +161,7 @@ class OfficialLoader(BaseLoader):
             print(
                 f"[split_upsample_truncation] Loaded cached files TEST({len(self.train_data)})/DEV({len(self.test_data)}).")
             return
+        raise NotImplementedError("Upsample Train Dataset not found.")
 
     def split_upsample_cleaned(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_cleaned_filename)) and os.path.isfile(
@@ -320,8 +321,9 @@ class OfficialLoader(BaseLoader):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename)):
             logging.info(f"Using cached official split files: {self.official_train_data_all_filename}")
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.official_train_data_all_cleaned_filename))
+            self.test_data = pd.read_csv(os.path.join(self.data_dir, self.official_test_data_filename))
             return
-        raise NotImplementedError("Upsample Cleaned Dataset not found.")
+        raise NotImplementedError("Upsample ALL Cleaned Dataset not found.")
 
     def split_upsample_all(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_all_filename)):
@@ -369,10 +371,6 @@ class OfficialLoader(BaseLoader):
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
             logging.info(
                 f"Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-            # self.train_data = self.train_data.drop_duplicates()
-            # logging.info(
-            #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-            # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
             return
         positive_class = self.train_data[self.train_data.label == 1]
         negative_class = self.train_data[self.train_data.label == 0]
@@ -478,33 +476,6 @@ class OfficialLoader(BaseLoader):
                 self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
             print((self.train_data.head()))
             self.train_data.to_csv(os.path.join(self.data_dir, output_name))
-        # if os.path.isfile(os.path.join(self.data_dir, self.augmentation_data_all_filename)):
-        #     logging.info(
-        #         f"[process] Using cached balanced dataset from {os.path.join(self.data_dir, self.augmentation_data_all_filename)}")
-        #     self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
-        #     logging.info(
-        #         f"[process] Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-        #     # self.train_data = self.train_data.drop_duplicates()
-        #     # logging.info(
-        #     #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-        #     # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
-        #     print((self.train_data.head()))
-        #     count = 0
-        #     for idx, row in self.train_data.iterrows():
-        #         if len(row['text']) > 512:
-        #             count += 1
-        #             self.train_data.loc[idx, 'text'] = row['text'][:128] + row['text'][-384:]
-        #             # row['text'] = row['text'][:128] + row['text'][-384:]
-        #     print(f'[process] before truncation, count = {count}\n')
-        #     count = 0
-        #     for idx, row in self.train_data.iterrows():
-        #         if len(row['text']) > 512:
-        #             count += 1
-        #     print(f'[process] after truncation, count = {count}\n')
-        #     print((self.train_data.head()))
-        #     self.train_data = self.train_data.drop(columns=['Unnamed: 0'])
-        #     print((self.train_data.head()))
-        #     self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_all_filename))
 
     def generate_data_original_labels(self):
         if os.path.isfile(os.path.join(self.data_dir, self.official_train_data_five_labels)) and os.path.isfile(
@@ -522,6 +493,8 @@ class OfficialLoader(BaseLoader):
             text = self.all_data.loc[self.all_data.par_id == par_id].text.values[0]
             binary_label = self.all_data.loc[self.all_data.par_id == par_id].label.values[0]
             orig_label = self.all_data.loc[self.all_data.par_id == par_id].orig_label.values[0]
+            keyword = self.all_data.loc[self.all_data.par_id == par_id].keyword.values[0]
+            country = self.all_data.loc[self.all_data.par_id == par_id].country.values[0]
             category = -1 if par_id not in self.all_categorical_data.par_id.values else \
                 self.all_categorical_data.loc[self.all_categorical_data.par_id == par_id].label.values[0]
             self.train_data.append({
@@ -529,7 +502,9 @@ class OfficialLoader(BaseLoader):
                 'text': text,
                 'binary_label': binary_label,
                 'orig_label': orig_label,
-                'category': category
+                'category': category,
+                'keyword': keyword,
+                'country': country
 
             })
         self.train_data = pd.DataFrame(self.train_data)
@@ -542,6 +517,8 @@ class OfficialLoader(BaseLoader):
                 continue
             binary_label = self.all_data.loc[self.all_data.par_id == par_id].label.values[0]
             orig_label = self.all_data.loc[self.all_data.par_id == par_id].orig_label.values[0]
+            keyword = self.all_data.loc[self.all_data.par_id == par_id].keyword.values[0]
+            country = self.all_data.loc[self.all_data.par_id == par_id].country.values[0]
             category = -1 if par_id not in self.all_categorical_data.par_id.values else \
                 self.all_categorical_data.loc[self.all_categorical_data.par_id == par_id].label.values[0]
             self.test_data.append({
@@ -549,7 +526,9 @@ class OfficialLoader(BaseLoader):
                 'text': text,
                 'binary_label': binary_label,
                 'orig_label': orig_label,
-                'category': category
+                'category': category,
+                'keyword': keyword,
+                'country': country
             })
         self.test_data = pd.DataFrame(self.test_data)
         self.test_data.to_csv(os.path.join(self.data_dir, self.official_test_data_five_labels))
