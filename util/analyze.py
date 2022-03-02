@@ -6,15 +6,12 @@ import ast
 import numpy as np
 import pandas as pd
 import logging
-from loader.official import OfficialLoader
+from ..loader.official import OfficialLoader
 import torch
 import torch.nn as nn
 import os
 import tqdm
 import matplotlib.pyplot as plt
-
-# TODO:1. 对于训练数据生成不同level的统计数据
-# TODO:2. 对于keyword和country code 进行分类统计
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.INFO)
