@@ -6,6 +6,7 @@ from model.DebertaV2XLarge import DebertaV2XLarge
 from model.DebertaBase import DebertaBase
 from model.DebertaLarge import DebertaLarge
 from model.XLNet import XLNet
+from model.Longformer import Longformer
 from loader.official import OfficialLoader
 from analyze import DataAnalyseTestCase
 
@@ -48,8 +49,7 @@ def get_model(model_name, data_loader):
     elif model_name == 'XLNet':
         nlp_model = XLNet(data_loader)
     else:
-        # TODO: Longerformer 是哪个模型
-        nlp_model = DebertaV2XLarge(data_loader)
+        nlp_model = Longformer(data_loader)
     return nlp_model
 
 
