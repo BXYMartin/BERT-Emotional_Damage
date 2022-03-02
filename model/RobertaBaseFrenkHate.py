@@ -36,7 +36,7 @@ class RobertaBaseFrenkHate:
             num_labels=2,
             output_attentions=False,
             output_hidden_states=False,
-            cache_dir="/vol/bitbucket/ya321/.cache",
+            
             local_files_only=local_files_only
         )
 
@@ -69,9 +69,9 @@ class RobertaBaseFrenkHate:
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         predictions = np.argmax(logits, axis=-1)
-        precision_metric = load_metric("precision", cache_dir="/vol/bitbucket/ya321/.cache")
-        recall_metric = load_metric("recall", cache_dir="/vol/bitbucket/ya321/.cache")
-        f1_metric = load_metric("f1", cache_dir="/vol/bitbucket/ya321/.cache")
+        precision_metric = load_metric("precision")
+        recall_metric = load_metric("recall")
+        f1_metric = load_metric("f1")
         precision = precision_metric.compute(predictions=predictions, references=labels)["precision"]
         recall = recall_metric.compute(predictions=predictions, references=labels)["recall"]
         f1 = f1_metric.compute(predictions=predictions, references=labels)["f1"]

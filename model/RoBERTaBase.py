@@ -7,9 +7,9 @@ import os
 
 
 class RoBERTaBase:
-    precision_metric = load_metric("precision", cache_dir="/vol/bitbucket/mb220/.cache")
-    recall_metric = load_metric("recall", cache_dir="/vol/bitbucket/mb220/.cache")
-    f1_metric = load_metric("f1", cache_dir="/vol/bitbucket/mb220/.cache")
+    precision_metric = load_metric("precision")
+    recall_metric = load_metric("recall")
+    f1_metric = load_metric("f1")
     tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
 
     def __init__(self, loader: BaseLoader, load_existing=False):
@@ -33,7 +33,7 @@ class RoBERTaBase:
             num_labels=2,           # The number of output labels--2 for binary classification.
             output_attentions=False,    # Whether the model returns attentions weights.
             output_hidden_states=False, # Whether the model returns all hidden-states.
-            cache_dir="/vol/bitbucket/mb220/.cache",
+            
             local_files_only=local_files_only
         )
         self.model.cuda()
