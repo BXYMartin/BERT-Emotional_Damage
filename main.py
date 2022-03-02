@@ -1,12 +1,11 @@
 import argparse
-import random
 import sys
-
-import numpy as np
-import torch
 import datetime
 from model.DebertaV3Large import DebertaV3Large
 from model.DebertaV2XLarge import DebertaV2XLarge
+from model.DebertaBase import DebertaBase
+from model.DebertaLarge import DebertaLarge
+from model.XLNet import XLNet
 from loader.official import OfficialLoader
 from analyze import DataAnalyseTestCase
 
@@ -16,14 +15,13 @@ parser.add_argument('--train', type=int, default=0,
 parser.add_argument('--model_name', type=str, default='DebertaV2XLarge', help='model name')
 parser.add_argument('--data_type', type=str, default='clean_upsample', help='precessed data type')
 args = parser.parse_args()
-# TODO: 完善支持的模型
-model_names = ['DebertaV3Large', 'DebertaV2XLarge']
+model_names = ['DeBERTaV3Large', 'DeBERTaV2XLarge', 'DeBERTaBase', 'DeBERTaLarge', 'XLNet', 'Longformer']
 loader_types = ['clean_upsample', 'synonym_clean_upsample', 'plain_upsample']
 
 
 def get_loader(loader_type, model_name):
     if loader_type not in loader_types:
-        print(f'Please input a valid loader type, valid types are:\n{loader_types}')
+        print(f'Please use a valid loader type, valid types are:\n{loader_types}')
         sys.exit(1)
     data_loader = OfficialLoader(model_name)
     if loader_type == 'clean_upsample':
@@ -37,11 +35,20 @@ def get_loader(loader_type, model_name):
 
 def get_model(model_name, data_loader):
     if model_name not in model_names:
-        print(f'Please input a valid model name, valid names are:\n{model_names}')
+        print(f'Please use a valid model name, valid names are:\n{model_names}')
         sys.exit(1)
     if model_name == 'DebertaV3Large':
         nlp_model = DebertaV3Large(data_loader)
+    elif model_name == 'DeBERTaV2XLarge':
+        nlp_model = DebertaV2XLarge(data_loader)
+    elif model_name == 'DeBERTaBase':
+        nlp_model = DebertaBase(data_loader)
+    elif model_name == 'DeBERTaLarge':
+        nlp_model = DebertaLarge(data_loader)
+    elif model_name == 'XLNet':
+        nlp_model = XLNet(data_loader)
     else:
+        # TODO: Longerformer 是哪个模型
         nlp_model = DebertaV2XLarge(data_loader)
     return nlp_model
 
