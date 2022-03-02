@@ -6,6 +6,16 @@ This is the natural language processing coursework repository for our team..
 - Xinyu Bai
 - Yuze An
 
+## Dependency
+- imblearn
+- pytorch
+- simpletransformers
+- transformers
+- tensorboard
+- numpy
+- scipy
+- scikit-learn
+
 ## Directory
 
 ```bash
