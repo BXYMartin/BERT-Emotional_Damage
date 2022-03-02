@@ -8,7 +8,8 @@ from model.DebertaLarge import DebertaLarge
 from model.XLNet import XLNet
 from model.Longformer import Longformer
 from loader.official import OfficialLoader
-from analyze import DataAnalyseTestCase
+from util.analyze import DataAnalyseTestCase
+from util.opt import ThresholdOptimizer
 
 parser = argparse.ArgumentParser(description='Run')
 parser.add_argument('--train', type=int, default=0,

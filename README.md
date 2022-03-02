@@ -25,7 +25,21 @@ This is the natural language processing coursework repository for our team..
 ## Usage
 ### Run `main.py`
 ```bash
+python -u [--train int] [--model_name str] [--data_type type]
+```
+* [--train ] the default value is `0`
+  * `1`: run training then testing 
+  * `0`: return cached testing results of our final model: DeBERTaV2XLarge
+* [--model_name ] determines which model to use and the default value is `DeBERTaV2XLarge`
+  * The value can be [`DeBERTaV3Large`, `DeBERTaV2XLarge`, `DeBERTaBase`, `DeBERTaLarge`, `XLNet`, `Longformer`]
+* [--data_type ] determines which type of data to use and the default value is `clean_upsample`
+  * `clean_upsample`: Upsampled data without extra quotation marks
+  * `synonym_clean_upsample`: Upsampled data without extra quotation marks uses synonym data augmentation technique
+  * `plain_upsample`: Upsampled data
 
+For example, you can train a `DeBERTaV2XLarge` model using `clean_upsample` data using:
+```bash
+python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsample
 ```
 
 ### Run unittest
