@@ -29,6 +29,14 @@ This is the natural language processing coursework repository for our team..
 ```
 
 ### Run unittest
+For example, we can run dataloader unittest test with:
 ```bash
-python -m unittest test.test.LoaderTestCase.test_loader
+python -m unittest test.DataLoaderTest.LoaderTestCase.test_loader
 ```
+Run LongformerLarge model training with:
+```bash
+python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
+```
+
+## Experiment Result
+All the results are stored in `resource` folder, including all figures, prediction files and labels.
