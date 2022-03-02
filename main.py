@@ -14,7 +14,7 @@ from util.opt import ThresholdOptimizer
 parser = argparse.ArgumentParser(description='Run')
 parser.add_argument('--train', type=int, default=0,
                     help='1 run training then testing; 0 return cached testing results')
-parser.add_argument('--model_name', type=str, default='DebertaV2XLarge', help='model name')
+parser.add_argument('--model_name', type=str, default='DeBERTaV2XLarge', help='model name')
 parser.add_argument('--data_type', type=str, default='clean_upsample', help='precessed data type')
 args = parser.parse_args()
 model_names = ['DeBERTaV3Large', 'DeBERTaV2XLarge', 'DeBERTaBase', 'DeBERTaLarge', 'XLNet', 'Longformer']
