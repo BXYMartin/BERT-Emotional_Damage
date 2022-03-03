@@ -27,7 +27,7 @@ This is the natural language processing coursework repository for our team..
 ```bash
 python -u [--train int] [--model_name str] [--data_type type]
 ```
-* [--train ] the default value is `0`
+* [--train ] the default value is `1`
   * `1`: run training then testing 
   * `0`: return cached testing results of our final model: DeBERTaV2XLarge
 * [--model_name ] determines which model to use and the default value is `DeBERTaV2XLarge`
