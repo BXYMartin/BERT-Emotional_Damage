@@ -44,7 +44,7 @@ python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsam
 **Note:** 
 - If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian Optimization step will be executed to maximize the model performance. 
 - Due to the randomness in the initialization of the model and the randomized batch sampler, the f1-score may be slightly lower than what we stated on the paper. Also, we performed early-stopping per iteration which is not used in consideration of time in this training process. If you run the command directly, the model will be trained on 1 epoch and the results are collected afterwards. 
-- To reproduce our result, use early-stopping at about 5000 training iterations for batch size 3 (slightly less than 1 epoch) and train the model on full labelled dataset.
+- To reproduce our result, use early-stopping at about 4900 training iterations for batch size 3 (slightly less than 1 epoch) and train the model on full labelled dataset before invoking Bayesian Optimization methods.
 
 
 
