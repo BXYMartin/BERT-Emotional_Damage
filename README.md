@@ -1,7 +1,7 @@
 # SemEval 2022 Task 4 SubTask 1: Patronizing and Condescending Language Detection
 This is the natural language processing coursework repository for our team.. 
 
-## EmotionalDamage Team
+## Emotional Damage Team
 - Boyu Han
 - Xinyu Bai
 - Yuze An
@@ -41,8 +41,10 @@ For example, you can train a `DeBERTaV2XLarge` model using `clean_upsample` data
 ```bash
 python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsample
 ```
-**Note:** If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian 
-Optimization process will be executed to maximum the model performance. But you may find the result is slightly lower than what we achieve on the papaer since we will save multiple checkpoint during a epoch and select the best iteration numbers to perform early stop strategy and Bayesian Optimisation. After multiple experiments, we found 5000 iterations(less than 1 epoch) is the best training iterations. However, if you direct run the command, the Bayesian Optimisation will be performed on the full-epoch trained model making a slightly worse result.
+**Note:** If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian Optimization step will be executed to maximize the model performance. Due to the randomness in the initialization of the model and the randomized batch sampler, the f1-score may be slightly lower than what we stated on the paper. Also, we performed early-stopping per iteration which is not used in consideration of time in this training process. If you run the command directly, the model will be trained on 1 epoch and the results are collected afterwards. To reproduce our result, use early-stopping at about 5000 training iterations for batch size 3 (slightly less than 1 epoch) and train the model on full labelled dataset.
+
+
+
 ### Run unittest
 For example, we can run dataloader unittest test with:
 ```bash
@@ -53,5 +55,5 @@ Run LongformerLarge model training with:
 python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
 ```
 
-## Experiment Result
+## Experiment result
 All the results are stored in `resource` folder, including all figures, prediction files and labels.
