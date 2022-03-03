@@ -1,7 +1,7 @@
 # SemEval 2022 Task 4 SubTask 1: Patronizing and Condescending Language Detection
 This is the natural language processing coursework repository for our team.. 
 
-## EmotionalDamage Team
+## Emotional Damage Team
 - Boyu Han
 - Xinyu Bai
 - Yuze An
@@ -35,8 +35,28 @@ This is the natural language processing coursework repository for our team..
 ## Usage
 ### Run `main.py`
 ```bash
-
+python -u [--train int] [--model_name str] [--data_type type]
 ```
+* [--train ] the default value is `1`
+  * `1`: run training then testing 
+  * `0`: return cached testing results of our final model: DeBERTaV2XLarge
+* [--model_name ] determines which model to use and the default value is `DeBERTaV2XLarge`
+  * The value can be [`DeBERTaV3Large`, `DeBERTaV2XLarge`, `DeBERTaBase`, `DeBERTaLarge`, `XLNet`, `Longformer`]
+* [--data_type ] determines which type of data to use and the default value is `clean_upsample`
+  * `clean_upsample`: Upsampled data without extra quotation marks
+  * `synonym_clean_upsample`: Upsampled data without extra quotation marks uses synonym data augmentation technique
+  * `plain_upsample`: Upsampled data
+
+For example, you can train a `DeBERTaV2XLarge` model using `clean_upsample` data using:
+```bash
+python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsample
+```
+**Note:** 
+- If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian Optimization step will be executed to maximize the model performance. 
+- Due to the randomness in the initialization of the model and the randomized batch sampler, the f1-score may be slightly lower than what we stated on the paper. Also, we performed early-stopping per iteration which is not used in consideration of time in this training process. If you run the command directly, the model will be trained on 1 epoch and the results are collected afterwards. 
+- To reproduce our result, use early-stopping at about 4900 training iterations for batch size 3 (slightly less than 1 epoch) and train the model on full labelled dataset before invoking Bayesian Optimization methods.
+
+
 
 ### Run unittest
 For example, we can run dataloader unittest test with:
@@ -48,5 +68,19 @@ Run LongformerLarge model training with:
 python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
 ```
 
-## Experiment Result
+## Our result
 All the results are stored in `resource` folder, including all figures, prediction files and labels.
+
+Our final submission with final dataset on CodaLab
+
+| Precision | Recall | F1-Score |
+| ------ | ------- |-------- |
+| 0.6154 | 0.6309  | 0.6231  |
+
+Our final ranking on CodaLab Post-Evaluation Section
+
+![Our final ranking](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/Ranking.png)
+
+Reason to perform early-stopping
+
+![Model performance w.r.t. checkpoints](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/DeBERTaV2XLarge.png)

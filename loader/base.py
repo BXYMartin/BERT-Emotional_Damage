@@ -17,6 +17,7 @@ class BaseLoader:
     base_dir = "runtime"
     data_dir = "data"
     prob_dir = "prob"
+    cached_prob_dir = "resource/data"
     final_prob_dir = "final_prob"
     name = "Base"
     score_filename = "score.txt"

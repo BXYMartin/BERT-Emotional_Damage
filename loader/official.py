@@ -104,10 +104,6 @@ class OfficialLoader(BaseLoader):
             self.train_data = pd.read_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
             logging.info(
                 f"Cached dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-            # self.train_data = self.train_data.drop_duplicates()
-            # logging.info(
-            #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-            # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
             return
         positive_class = self.train_data[self.train_data.label == 1]
         negative_class = self.train_data[self.train_data.label == 0]
@@ -204,7 +200,6 @@ class OfficialLoader(BaseLoader):
             new_sentences = []
             word_tokens = word_tokenize(sentence)
             replace_size = min(50, int(ratio * len(word_tokens)))
-            # replace_size = max(3, replace_size)
             replace_indices = np.random.choice(len(word_tokens), size=replace_size, replace=False)
             for i in range(max_syn_per_word):
                 new_sentence = sentence
@@ -225,7 +220,6 @@ class OfficialLoader(BaseLoader):
             generated_data = pd.DataFrame([], columns=data.columns)
             with tqdm.tqdm(data.index) as tepoch:
                 for i, index in enumerate(tepoch):
-                    # print(f'[data_augment_synonym_replacement] {index}/{len(data.index)}')
                     text_to_augment = data[column][index]
                     for generated_sentence in create_set_of_new_sentences(text_to_augment):
                         new_entry = data.loc[[index]]
@@ -283,17 +277,13 @@ class OfficialLoader(BaseLoader):
         print(f"y_numpy = \n{y}")
         oversample_x, oversample_y = oversampler.fit_resample(x,
                                                               y)
-        # oversample_x = oversample_x.ravel()
         print(f"oversample_x.shape = {oversample_x.shape}\toversample_y.shape = {oversample_y.shape}")
         print(Counter(oversample_y))
         self.train_data = []
         for i in range(len(oversample_x)):
-            # df.at[4, 'B']
             par_id = oversample_x[i][0]
             text = oversample_x[i][1]
-            # print(f'par_id={par_id}\ttext={text}')
             label = oversample_y[i]
-            # print(f'label = {label}')
             self.train_data.append({
                 'par_id': par_id,
                 'text': text,
@@ -342,17 +332,13 @@ class OfficialLoader(BaseLoader):
         y = np.array(self.train_data['label'])
         oversample_x, oversample_y = oversampler.fit_resample(x,
                                                               y)
-        # oversample_x = oversample_x.ravel()
         print(f"oversample_x.shape = {oversample_x.shape}\toversample_y.shape = {oversample_y.shape}")
         print(Counter(oversample_y))
         self.train_data = []
         for i in range(len(oversample_x)):
-            # df.at[4, 'B']
             par_id = oversample_x[i][0]
             text = oversample_x[i][1]
-            # print(f'par_id={par_id}\ttext={text}')
             label = oversample_y[i]
-            # print(f'label = {label}')
             self.train_data.append({
                 'par_id': par_id,
                 'text': text,
@@ -450,10 +436,6 @@ class OfficialLoader(BaseLoader):
                                               names=['par_id', 'art_id', 'keyword', 'country', 'text'])
             else:
                 self.train_data = pd.read_csv(os.path.join(self.data_dir, input_name))
-            # self.train_data = self.train_data.drop_duplicates()
-            # logging.info(
-            #    f"No duplicated dataset: Positive/Negative {len(self.train_data[self.train_data.label == 1])}/{len(self.train_data[self.train_data.label == 0])}")
-            # self.train_data.to_csv(os.path.join(self.data_dir, self.augmentation_data_filename))
             print((self.train_data.head()))
             count = 0
             for idx, row in self.train_data.iterrows():

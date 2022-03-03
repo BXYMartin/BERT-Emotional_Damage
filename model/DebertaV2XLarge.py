@@ -20,7 +20,7 @@ def flat_accuracy(preds, labels):
 
 
 class DebertaV2XLarge:
-    train_epochs = 3
+    train_epochs = 1
     eval_while_training = True
     batch_size = 3
     eval_step_size = 700

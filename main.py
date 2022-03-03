@@ -8,12 +8,13 @@ from model.DebertaLarge import DebertaLarge
 from model.XLNet import XLNet
 from model.Longformer import Longformer
 from loader.official import OfficialLoader
-from analyze import DataAnalyseTestCase
+from util.analyze import DataAnalyseTestCase
+from util.opt import ThresholdOptimizer
 
 parser = argparse.ArgumentParser(description='Run')
-parser.add_argument('--train', type=int, default=0,
+parser.add_argument('--train', type=int, default=1,
                     help='1 run training then testing; 0 return cached testing results')
-parser.add_argument('--model_name', type=str, default='DebertaV2XLarge', help='model name')
+parser.add_argument('--model_name', type=str, default='DeBERTaV2XLarge', help='model name')
 parser.add_argument('--data_type', type=str, default='clean_upsample', help='precessed data type')
 args = parser.parse_args()
 model_names = ['DeBERTaV3Large', 'DeBERTaV2XLarge', 'DeBERTaBase', 'DeBERTaLarge', 'XLNet', 'Longformer']
@@ -41,7 +42,7 @@ def get_model(model_name, data_loader):
     if model_name == 'DebertaV3Large':
         nlp_model = DebertaV3Large(data_loader)
     elif model_name == 'DeBERTaV2XLarge':
-        nlp_model = DebertaV2XLarge(data_loader)
+        nlp_model = DebertaV2XLarge(data_loader, save_prob=True)
     elif model_name == 'DeBERTaBase':
         nlp_model = DebertaBase(data_loader)
     elif model_name == 'DeBERTaLarge':
@@ -60,6 +61,11 @@ if __name__ == "__main__":
     if args.train:
         nlp_model = get_model(args.model_name, loader)
         nlp_model.train()
+        if args.model_name == 'DeBERTaV2XLarge':
+            print('*' * 15 + "\tStart Bayesian Optimisation\t" + '*' * 15)
+            nlp_model.predict()
+            optimizer = ThresholdOptimizer(loader)
+            optimizer.run()
     else:
         DataAnalyseTestCase.test_all_label()
     endtime = datetime.datetime.now()
