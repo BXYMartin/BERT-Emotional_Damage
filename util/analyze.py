@@ -41,7 +41,7 @@ class DataAnalyseTestCase(unittest.TestCase):
     def test_all_label():
         loader = OfficialLoader('AnalysisP')
         loader.split()
-        predicted_probs_path = os.path.join(loader.prob_dir,
+        predicted_probs_path = os.path.join(loader.cached_prob_dir,
                                             loader.prob_filename)
         predict_probs = np.loadtxt(predicted_probs_path)
         predict_labels = get_predicted_labels(predict_probs)

@@ -41,7 +41,8 @@ For example, you can train a `DeBERTaV2XLarge` model using `clean_upsample` data
 ```bash
 python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsample
 ```
-
+**Note:** If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian 
+Optimization process will be executed to maximum the model performance.
 ### Run unittest
 For example, we can run dataloader unittest test with:
 ```bash
