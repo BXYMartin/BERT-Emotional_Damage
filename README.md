@@ -61,10 +61,15 @@ python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
 ## Our result
 All the results are stored in `resource` folder, including all figures, prediction files and labels.
 
+Our final submission with final dataset on CodaLab
+
 | Precision | Recall | F1-Score |
 | ------ | ------- |-------- |
 | 0.6154 | 0.6309  | 0.6231  |
 
+Our final ranking on CodaLab Post-Evaluation Section
+
+![Our final ranking](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/Ranking.png)
 
 Reason to perform early-stopping
 
