@@ -12,7 +12,7 @@ from util.analyze import DataAnalyseTestCase
 from util.opt import ThresholdOptimizer
 
 parser = argparse.ArgumentParser(description='Run')
-parser.add_argument('--train', type=int, default=0,
+parser.add_argument('--train', type=int, default=1,
                     help='1 run training then testing; 0 return cached testing results')
 parser.add_argument('--model_name', type=str, default='DeBERTaV2XLarge', help='model name')
 parser.add_argument('--data_type', type=str, default='clean_upsample', help='precessed data type')

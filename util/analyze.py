@@ -6,7 +6,7 @@ import ast
 import numpy as np
 import pandas as pd
 import logging
-from ..loader.official import OfficialLoader
+from loader.official import OfficialLoader
 import torch
 import torch.nn as nn
 import os
