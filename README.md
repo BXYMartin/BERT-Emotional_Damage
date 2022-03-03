@@ -6,7 +6,7 @@ This is the natural language processing coursework repository for our team..
 - Xinyu Bai
 - Yuze An
 
-## Dependency
+## Project Dependency
 - imblearn
 - pytorch
 - simpletransformers
@@ -16,7 +16,7 @@ This is the natural language processing coursework repository for our team..
 - scipy
 - scikit-learn
 
-## Directory
+## Project Directory
 
 ```bash
 .
@@ -67,6 +67,7 @@ Run LongformerLarge model training with:
 ```bash
 python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
 ```
+More tests are located within `test` folder.
 
 ## Our result
 All the results are stored in `resource` folder, including all figures, prediction files and labels.
