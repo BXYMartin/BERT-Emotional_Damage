@@ -58,5 +58,9 @@ Run LongformerLarge model training with:
 python -m unittest test.LongformerLargeTest.LongformerLargeTestCase.test_train
 ```
 
-## Experiment result
+## Our result
 All the results are stored in `resource` folder, including all figures, prediction files and labels.
+
+| Precision | Recall | F1-Score |
+| ------ | ------- |-------- |
+| 0.6154 | 0.6309  | 0.6231  |
