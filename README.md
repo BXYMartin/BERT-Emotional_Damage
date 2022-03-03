@@ -64,3 +64,8 @@ All the results are stored in `resource` folder, including all figures, predicti
 | Precision | Recall | F1-Score |
 | ------ | ------- |-------- |
 | 0.6154 | 0.6309  | 0.6231  |
+
+
+Reason to perform early-stopping
+
+![Model performance w.r.t. checkpoints](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/DeBERTaV2XLarge.png)
