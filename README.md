@@ -81,6 +81,14 @@ Our final ranking on CodaLab Post-Evaluation Section
 
 ![Our final ranking](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/Ranking.png)
 
+Statistics for training dataset
+
+![Sequence length distribution](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/LengthDistribution.png)
+
 Reason to perform early-stopping
 
 ![Model performance w.r.t. checkpoints](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/DeBERTaV2XLarge.png)
+
+Bayesian Optimization steps
+
+![Bayesian Optimization steps](https://github.com/BXYMartin/BERT-Emotional_Damage/blob/master/resource/plot/BayesianOpt.png)
