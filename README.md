@@ -42,7 +42,7 @@ For example, you can train a `DeBERTaV2XLarge` model using `clean_upsample` data
 python -u main.py --train 1 --model_name DeBERTaV2XLarge --data_type clean_upsample
 ```
 **Note:** If you use `DeBERTaV2XLarge` which is our final model, an extra Bayesian 
-Optimization process will be executed to maximum the model performance.
+Optimization process will be executed to maximum the model performance. But you may find the result is slightly lower than what we achieve on the papaer since we will save multiple checkpoint during a epoch and select the best iteration numbers to perform early stop strategy and Bayesian Optimisation. After multiple experiments, we found 5000 iterations(less than 1 epoch) is the best training iterations. However, if you direct run the command, the Bayesian Optimisation will be performed on the full-epoch trained model making a slightly worse result.
 ### Run unittest
 For example, we can run dataloader unittest test with:
 ```bash
